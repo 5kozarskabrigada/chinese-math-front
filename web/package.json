@@ -9,10 +9,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@secure-exam/shared": "0.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
+    "secure-exam-platform": "file:../..",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {

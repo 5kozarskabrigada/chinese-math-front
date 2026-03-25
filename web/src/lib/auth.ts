@@ -1,4 +1,4 @@
-import type { Role } from "@secure-exam/shared";
+import type { Role } from "./role";
 
 export interface AuthState {
   token: string;
