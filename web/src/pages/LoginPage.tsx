@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { User, Lock, Eye, EyeOff } from "lucide-react";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 
@@ -45,18 +46,26 @@ export function LoginPage(props: {
         <form onSubmit={handleSubmit} className="stack">
           <div className="input-group">
             <label>Username</label>
-            <input 
-              type="text"
-              value={id} 
-              onChange={(event) => setId(event.target.value)} 
-              placeholder="Enter your username"
-              required 
-            />
+            <div className="input-with-icon">
+              <div className="input-icon-left">
+                <User size={18} />
+              </div>
+              <input 
+                type="text"
+                value={id} 
+                onChange={(event) => setId(event.target.value)} 
+                placeholder="Enter your username"
+                required 
+              />
+            </div>
           </div>
           
           <div className="input-group">
             <label>Password</label>
-            <div className="password-wrapper">
+            <div className="input-with-icon">
+              <div className="input-icon-left">
+                <Lock size={18} />
+              </div>
               <input 
                 type={showPassword ? "text" : "password"}
                 value={password} 
@@ -70,7 +79,7 @@ export function LoginPage(props: {
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
