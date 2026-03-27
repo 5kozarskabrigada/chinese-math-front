@@ -93,8 +93,8 @@ export function LoginPage(props: {
         
         <div className="hint">
           <strong>Demo Accounts:</strong><br />
-          👨‍💼 Admin: admin-1 / admin123<br />
-          🎓 Student: stu-1001 / student123
+          Admin: admin-1 / admin123<br />
+          Student: stu-1001 / student123
         </div>
       </section>
     </main>

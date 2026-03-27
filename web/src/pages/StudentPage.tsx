@@ -181,25 +181,25 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
   return (
     <main className="student-layout">
       <header className="exam-header">
-        <div>👤 {profile.id} • 📚 Mathematics Test</div>
-        <h1>🧮 Mathematics National Exam</h1>
+        <div>{profile.id} • Mathematics Test</div>
+        <h1>Mathematics National Exam</h1>
         <div className={remainingSeconds <= 300 ? "timer danger" : remainingSeconds <= 900 ? "timer warn" : "timer"}>
           {timerText}
         </div>
       </header>
 
-      <div className="warning-strip">⚠️ Do not leave the exam window. All actions are monitored.</div>
+      <div className="warning-strip">Do not leave the exam window. All actions are monitored.</div>
 
       {!joinedExam ? (
         <section className="pre-exam-section">
           <div className="panel">
-            <h2>📋 Pre-Exam Setup</h2>
+            <h2>Pre-Exam Setup</h2>
             <p>Before starting your exam, we need to verify your identity and setup monitoring systems for exam integrity.</p>
             
             <div className="stack">
               <div>
                 <h3 style={{ color: 'var(--primary-blue)', fontSize: '18px', marginBottom: '12px' }}>
-                  🎯 Verification Steps
+                  Verification Steps
                 </h3>
                 <div className="row">
                   <button 
@@ -207,20 +207,20 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
                     onClick={verifyCamera} 
                     disabled={profile.cameraVerified}
                   >
-                    {profile.cameraVerified ? "✅ Camera Verified" : "📷 Verify Camera"}
+                    {profile.cameraVerified ? "Camera Verified" : "Verify Camera"}
                   </button>
                   <button 
                     className={profile.phoneLinked ? "success-button" : ""}
                     onClick={linkPhone} 
                     disabled={profile.phoneLinked}
                   >
-                    {profile.phoneLinked ? "✅ Phone Linked" : "📱 Link Phone"}
+                    {profile.phoneLinked ? "Phone Linked" : "Link Phone"}
                   </button>
                 </div>
               </div>
               
               <div className="input-group">
-                <label>🔐 Exam Access Code</label>
+                <label>Exam Access Code</label>
                 <input 
                   value={examCode} 
                   onChange={(event) => setExamCode(event.target.value)} 
@@ -230,7 +230,7 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
                 />
               </div>
               
-              {error ? <div className="error">❌ {error}</div> : null}
+              {error ? <div className="error">{error}</div> : null}
               
               <button 
                 onClick={startExam} 
@@ -243,8 +243,8 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
                 }}
               >
                 {(!profile.cameraVerified || !profile.phoneLinked) ? 
-                  "🔒 Complete Setup First" : 
-                  "🚀 Start Exam"
+                  "Complete Setup First" : 
+                  "Start Exam"
                 }
               </button>
               
@@ -287,11 +287,11 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
           </article>
 
           <footer className="control-bar">
-            <button>⬅️ Previous</button>
+            <button>← Previous</button>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
-              <input type="checkbox" /> 🔖 Mark for Review
+              <input type="checkbox" /> Mark for Review
             </label>
-            <button>Next ➡️</button>
+            <button>Next →</button>
             <button
               className="danger-button"
               onClick={async () => {
@@ -306,7 +306,7 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
                 }
               }}
             >
-              📤 Submit Exam
+              Submit Exam
             </button>
           </footer>
         </section>
