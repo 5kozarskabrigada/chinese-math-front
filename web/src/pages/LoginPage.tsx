@@ -39,7 +39,7 @@ export function LoginPage(props: {
   return (
     <main className="login-page">
       <section className="panel">
-        <h1>Chinese Math Mock Exam</h1>
+        <h1>🚀 DEPLOYMENT TEST - Chinese Math Mock Exam</h1>
         <p className="muted">Welcome! Please sign in to continue to your examination dashboard.</p>
         
         <form onSubmit={handleSubmit} className="stack">
