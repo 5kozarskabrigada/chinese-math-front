@@ -39,17 +39,17 @@ export function LoginPage(props: {
   return (
     <main className="login-page">
       <section className="panel">
-        <h1>Secure Exam Portal</h1>
+        <h1>Chinese Math Mock Exam</h1>
         <p className="muted">Welcome! Please sign in to continue to your examination dashboard.</p>
         
         <form onSubmit={handleSubmit} className="stack">
           <div className="input-group">
-            <label>Student / Admin ID</label>
+            <label>Username</label>
             <input 
               type="text"
               value={id} 
               onChange={(event) => setId(event.target.value)} 
-              placeholder="Enter your ID"
+              placeholder="Enter your username"
               required 
             />
           </div>

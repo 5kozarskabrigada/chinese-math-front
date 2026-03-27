@@ -184,11 +184,11 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
         <div>👤 {profile.id} • 📚 Mathematics Test</div>
         <h1>🧮 Mathematics National Exam</h1>
         <div className={remainingSeconds <= 300 ? "timer danger" : remainingSeconds <= 900 ? "timer warn" : "timer"}>
-          ⏰ {timerText}
+          {timerText}
         </div>
       </header>
 
-      <div className="warning-strip">🚨 Stay focused! All activities are monitored for exam security</div>
+      <div className="warning-strip">⚠️ Do not leave the exam window. All actions are monitored.</div>
 
       {!joinedExam ? (
         <section className="pre-exam-section">

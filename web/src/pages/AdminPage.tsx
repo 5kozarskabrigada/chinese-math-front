@@ -102,37 +102,39 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   return (
     <main className="admin-layout">
       <aside className="sidebar">
-        <h2>Admin Panel</h2>
+        <h2>🔐 Admin Panel</h2>
         <nav>
-          <a>Students</a>
-          <a>Classrooms</a>
-          <a>Exams</a>
-          <a>Monitoring</a>
-          <a>Logs</a>
-          <a>Submissions / Results</a>
-          <a>Recycle Bin</a>
+          <a>👥 Students</a>
+          <a>🏫 Classrooms</a>
+          <a>📝 Exams</a>
+          <a>👀 Live Monitoring</a>
+          <a>📊 Activity Logs</a>
+          <a>📋 Results</a>
+          <a>🗑️ Archive</a>
         </nav>
-        <button onClick={props.onLogout}>Logout</button>
+        <button onClick={props.onLogout}>🚪 Logout</button>
       </aside>
 
       <section className="content">
-        <h1>Proctor Dashboard</h1>
+        <h1>🎯 Chinese Math Exam Dashboard</h1>
         {error ? <div className="error">{error}</div> : null}
         {dashboard ? (
           <div className="metric-grid">
-            <article><strong>{dashboard.students}</strong><span>Students</span></article>
-            <article><strong>{dashboard.classrooms}</strong><span>Classrooms</span></article>
-            <article><strong>{dashboard.exams}</strong><span>Exams</span></article>
-            <article><strong>{dashboard.flagged}</strong><span>Flagged</span></article>
-            <article><strong>{dashboard.terminated}</strong><span>Terminated</span></article>
+            <article><strong>{dashboard.students}</strong><span>👥 Students</span></article>
+            <article><strong>{dashboard.classrooms}</strong><span>🏫 Classrooms</span></article>
+            <article><strong>{dashboard.exams}</strong><span>📝 Active Exams</span></article>
+            <article><strong>{dashboard.flagged}</strong><span>⚠️ Flagged</span></article>
+            <article><strong>{dashboard.terminated}</strong><span>🚫 Terminated</span></article>
           </div>
         ) : (
           <p className="muted">Loading dashboard...</p>
         )}
 
-        <h3>Live Student States</h3>
-        <p className="muted">Realtime: {lastEvent}</p>
         <div className="student-grid">
+          <h3>👀 Live Student Monitoring</h3>
+          <p className="muted" style={{ gridColumn: '1 / -1', textAlign: 'center', fontSize: '16px', padding: '16px', background: 'var(--light-blue)', borderRadius: '8px', margin: '0 0 20px 0' }}>
+            📡 Realtime Updates: {lastEvent}
+          </p>
           {students.map((student) => (
             <article key={student.id} className="student-card">
               <header>
