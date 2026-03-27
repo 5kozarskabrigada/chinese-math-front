@@ -51,6 +51,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const [activeView, setActiveView] = useState<"overview" | "users">("overview");
   
   // User creation form state
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
   const [newUserRole, setNewUserRole] = useState<"student" | "admin">("student");
@@ -162,11 +163,12 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
         const userData = await apiRequest<User[]>({ path: "/admin/users", auth: props.auth });
         setUsers(userData);
         
-        // Reset form
+        // Reset form and hide it
         setNewUserFirstName("");
         setNewUserLastName("");
         setNewUserRole("student");
         setNewUserClassroom("");
+        setShowCreateForm(false);
         setError(null);
       }
     } catch (err) {
@@ -428,69 +430,80 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                   <h1 className="page-title">User Management</h1>
                   <p className="page-subtitle">Create and manage student and admin accounts</p>
                 </div>
+                <button 
+                  onClick={() => setShowCreateForm(!showCreateForm)} 
+                  className="create-new-user-btn"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: "20px", height: "20px" }}>
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  {showCreateForm ? "Cancel" : "Create New User"}
+                </button>
               </div>
 
-              {/* Create User Form */}
-              <div className="user-form-section">
-                <h2 className="section-title">Create New User</h2>
-                <div className="user-form">
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>First Name</label>
-                      <input
-                        type="text"
-                        value={newUserFirstName}
-                        onChange={(e) => setNewUserFirstName(e.target.value)}
-                        placeholder="Enter first name"
-                        className="form-input"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Last Name</label>
-                      <input
-                        type="text"
-                        value={newUserLastName}
-                        onChange={(e) => setNewUserLastName(e.target.value)}
-                        placeholder="Enter last name"
-                        className="form-input"
-                      />
-                    </div>
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Role</label>
-                      <select
-                        value={newUserRole}
-                        onChange={(e) => setNewUserRole(e.target.value as "student" | "admin")}
-                        className="form-select"
-                      >
-                        <option value="student">Student</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </div>
-                    {newUserRole === "student" && (
+              {/* Create User Form - Conditionally Rendered */}
+              {showCreateForm && (
+                <div className="user-form-section">
+                  <h2 className="section-title">Create New User</h2>
+                  <div className="user-form">
+                    <div className="form-row">
                       <div className="form-group">
-                        <label>Classroom</label>
+                        <label>First Name</label>
+                        <input
+                          type="text"
+                          value={newUserFirstName}
+                          onChange={(e) => setNewUserFirstName(e.target.value)}
+                          placeholder="Enter first name"
+                          className="form-input"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Last Name</label>
+                        <input
+                          type="text"
+                          value={newUserLastName}
+                          onChange={(e) => setNewUserLastName(e.target.value)}
+                          placeholder="Enter last name"
+                          className="form-input"
+                        />
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Role</label>
                         <select
-                          value={newUserClassroom}
-                          onChange={(e) => setNewUserClassroom(e.target.value)}
+                          value={newUserRole}
+                          onChange={(e) => setNewUserRole(e.target.value as "student" | "admin")}
                           className="form-select"
                         >
-                          <option value="">No classroom</option>
-                          {classrooms.map((classroom) => (
-                            <option key={classroom.id} value={classroom.id}>
-                              {classroom.name}
-                            </option>
-                          ))}
+                          <option value="student">Student</option>
+                          <option value="admin">Admin</option>
                         </select>
                       </div>
-                    )}
+                      {newUserRole === "student" && (
+                        <div className="form-group">
+                          <label>Classroom</label>
+                          <select
+                            value={newUserClassroom}
+                            onChange={(e) => setNewUserClassroom(e.target.value)}
+                            className="form-select"
+                          >
+                            <option value="">No classroom</option>
+                            {classrooms.map((classroom) => (
+                              <option key={classroom.id} value={classroom.id}>
+                                {classroom.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                    <button onClick={createUser} className="create-user-button">
+                      Create User
+                    </button>
                   </div>
-                  <button onClick={createUser} className="create-user-button">
-                    Create User
-                  </button>
                 </div>
-              </div>
+              )}
 
               {/* Users List */}
               <div className="monitoring-section">
