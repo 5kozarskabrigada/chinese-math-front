@@ -20,12 +20,44 @@ type Student = {
   phoneLinked: boolean;
 };
 
+type User = {
+  id: string;
+  name: string;
+  role: "admin" | "student";
+  classroomId?: string;
+};
+
+type NewUserCredentials = {
+  id: string;
+  name: string;
+  username: string;
+  password: string;
+  role: string;
+};
+
+type Classroom = {
+  id: string;
+  name: string;
+};
+
 export function AdminPage(props: { auth: AuthState | null; onLogout: () => void }): JSX.Element {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [lastEvent, setLastEvent] = useState<string>("No realtime events yet.");
   const [error, setError] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<"overview" | "users">("overview");
+  
+  // User creation form state
+  const [newUserFirstName, setNewUserFirstName] = useState("");
+  const [newUserLastName, setNewUserLastName] = useState("");
+  const [newUserRole, setNewUserRole] = useState<"student" | "admin">("student");
+  const [newUserClassroom, setNewUserClassroom] = useState("");
+  const [showCredentials, setShowCredentials] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<NewUserCredentials | null>(null);
+  
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -33,14 +65,18 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
 
     async function loadData() {
       try {
-        const [dashboardData, studentData] = await Promise.all([
+        const [dashboardData, studentData, userData, classroomData] = await Promise.all([
           apiRequest<DashboardData>({ path: "/admin/dashboard", auth: props.auth }),
-          apiRequest<Student[]>({ path: "/admin/students", auth: props.auth })
+          apiRequest<Student[]>({ path: "/admin/students", auth: props.auth }),
+          apiRequest<User[]>({ path: "/admin/users", auth: props.auth }),
+          apiRequest<Classroom[]>({ path: "/admin/classrooms", auth: props.auth })
         ]);
 
         if (isMounted) {
           setDashboard(dashboardData);
           setStudents(studentData);
+          setUsers(userData);
+          setClassrooms(classroomData);
         }
       } catch (requestError) {
         if (isMounted) {
@@ -99,6 +135,108 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     });
   }
 
+  async function createUser() {
+    if (!props.auth || !newUserFirstName.trim() || !newUserLastName.trim()) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      const response = await apiRequest<{ created: boolean; user: NewUserCredentials }>({
+        path: "/admin/users",
+        method: "POST",
+        auth: props.auth,
+        body: {
+          firstName: newUserFirstName.trim(),
+          lastName: newUserLastName.trim(),
+          role: newUserRole,
+          classroomId: newUserRole === "student" && newUserClassroom ? newUserClassroom : undefined
+        }
+      });
+
+      if (response.created && response.user) {
+        setCreatedCredentials(response.user);
+        setShowCredentials(true);
+        
+        // Refresh users list
+        const userData = await apiRequest<User[]>({ path: "/admin/users", auth: props.auth });
+        setUsers(userData);
+        
+        // Reset form
+        setNewUserFirstName("");
+        setNewUserLastName("");
+        setNewUserRole("student");
+        setNewUserClassroom("");
+        setError(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create user");
+    }
+  }
+
+  async function deleteUser(userId: string) {
+    if (!props.auth || !confirm("Are you sure you want to delete this user?")) {
+      return;
+    }
+
+    try {
+      await apiRequest({
+        path: `/admin/users/${userId}`,
+        method: "DELETE",
+        auth: props.auth
+      });
+
+      // Refresh users list
+      const userData = await apiRequest<User[]>({ path: "/admin/users", auth: props.auth });
+      setUsers(userData);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete user");
+    }
+  }
+
+  async function resetPassword(userId: string) {
+    if (!props.auth || !confirm("Generate a new password for this user?")) {
+      return;
+    }
+
+    try {
+      const response = await apiRequest<{ updated: boolean; userId: string; newPassword: string }>({
+        path: `/admin/users/${userId}/password`,
+        method: "PATCH",
+        auth: props.auth,
+        body: {}
+      });
+
+      if (response.updated) {
+        alert(`New password generated:\n\nUsername: ${userId}\nPassword: ${response.newPassword}\n\nMake sure to save this password!`);
+        setError(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reset password");
+    }
+  }
+
+  function copyToClipboard(text: string, label: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert(`${label} copied to clipboard!`);
+    }).catch(() => {
+      alert(`Failed to copy ${label}`);
+    });
+  }
+
+  function copyAllCredentials() {
+    if (!createdCredentials) return;
+    
+    const text = `Name: ${createdCredentials.name}\nUsername: ${createdCredentials.username}\nPassword: ${createdCredentials.password}\nRole: ${createdCredentials.role}`;
+    navigator.clipboard.writeText(text).then(() => {
+      alert("All credentials copied to clipboard!");
+    }).catch(() => {
+      alert("Failed to copy credentials");
+    });
+  }
+
+
   return (
     <div className="admin-dashboard">
       {/* Sidebar */}
@@ -116,7 +254,8 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
         </div>
         
         <nav className="sidebar-nav">
-          <a className="nav-item nav-item-active">Overview</a>
+          <a className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => setActiveView("overview")}>Overview</a>
+          <a className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => setActiveView("users")}>User Management</a>
           <a className="nav-item">Students</a>
           <a className="nav-item">Classrooms</a>
           <a className="nav-item">Exams</a>
@@ -146,135 +285,297 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
       {/* Main Content */}
       <main className="admin-main">
         <div className="content-container">
-          {/* Header */}
-          <div className="page-header">
-            <div>
-              <h1 className="page-title">Dashboard Overview</h1>
-              <p className="page-subtitle">Welcome back, here's what's happening today.</p>
-            </div>
-          </div>
-
           {error ? (
-            <div className="alert-error">{error}</div>
+            <div className="alert-error" style={{ marginBottom: "24px", padding: "16px", background: "#fee2e2", color: "#991b1b", borderRadius: "8px" }}>{error}</div>
           ) : null}
 
-          {/* Stats Grid */}
-          {dashboard ? (
-            <div className="stats-grid">
-              <div className="stat-card stat-blue">
-                <div className="stat-icon stat-icon-blue">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-                  </svg>
-                </div>
+          {/* Overview View */}
+          {activeView === "overview" && (
+            <>
+              {/* Header */}
+              <div className="page-header">
                 <div>
-                  <p className="stat-label">Total Students</p>
-                  <p className="stat-value">{dashboard.students}</p>
+                  <h1 className="page-title">Dashboard Overview</h1>
+                  <p className="page-subtitle">Welcome back, here's what's happening today.</p>
                 </div>
               </div>
 
-              <div className="stat-card stat-green">
-                <div className="stat-icon stat-icon-green">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="stat-label">Classrooms</p>
-                  <p className="stat-value">{dashboard.classrooms}</p>
-                </div>
-              </div>
+              {/* Stats Grid */}
+              {dashboard ? (
+                <div className="stats-grid">
+                  <div className="stat-card stat-blue">
+                    <div className="stat-icon stat-icon-blue">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="stat-label">Total Students</p>
+                      <p className="stat-value">{dashboard.students}</p>
+                    </div>
+                  </div>
 
-              <div className="stat-card stat-purple">
-                <div className="stat-icon stat-icon-purple">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 016.5 22H20M20 17V22M20 17l-7-7M20 17H10a2 2 0 01-2-2V5" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="stat-label">Active Exams</p>
-                  <p className="stat-value">{dashboard.exams}</p>
-                </div>
-              </div>
+                  <div className="stat-card stat-green">
+                    <div className="stat-icon stat-icon-green">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="stat-label">Classrooms</p>
+                      <p className="stat-value">{dashboard.classrooms}</p>
+                    </div>
+                  </div>
 
-              <div className="stat-card stat-orange">
-                <div className="stat-icon stat-icon-orange">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <div className="stat-card stat-purple">
+                    <div className="stat-icon stat-icon-purple">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 016.5 22H20M20 17V22M20 17l-7-7M20 17H10a2 2 0 01-2-2V5" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="stat-label">Active Exams</p>
+                      <p className="stat-value">{dashboard.exams}</p>
+                    </div>
+                  </div>
+
+                  <div className="stat-card stat-orange">
+                    <div className="stat-icon stat-icon-orange">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="stat-label">Flagged</p>
+                      <p className="stat-value">{dashboard.flagged}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="stat-label">Flagged</p>
-                  <p className="stat-value">{dashboard.flagged}</p>
+              ) : (
+                <p className="loading-text">Loading dashboard...</p>
+              )}
+
+              {/* Live Monitoring */}
+              <div className="monitoring-section">
+                <h2 className="section-title">Live Student Monitoring</h2>
+                
+                <div className="realtime-badge">
+                  <span className="pulse-dot"></span>
+                  <span className="realtime-text">Realtime Updates: {lastEvent}</span>
+                </div>
+
+                {/* Students Table */}
+                <div className="table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Student</th>
+                        <th>ID</th>
+                        <th>Status</th>
+                        <th>Camera</th>
+                        <th>Phone</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {students.map((student) => (
+                        <tr key={student.id}>
+                          <td className="student-name">{student.name}</td>
+                          <td className="student-id">{student.id}</td>
+                          <td>
+                            <span className="badge badge-status">{student.status}</span>
+                          </td>
+                          <td>
+                            <span className={student.cameraVerified ? "badge badge-verified" : "badge badge-unverified"}>
+                              {student.cameraVerified ? "Active" : "Not verified"}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={student.phoneLinked ? "badge badge-verified" : "badge badge-unverified"}>
+                              {student.phoneLinked ? "Linked" : "Not linked"}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="action-cell">
+                              <input
+                                type="text"
+                                className="warning-input"
+                                placeholder="Warning message"
+                                value={warnings[student.id] ?? ""}
+                                onChange={(event) => {
+                                  setWarnings((current) => ({ ...current, [student.id]: event.target.value }));
+                                }}
+                              />
+                              <button onClick={() => sendWarning(student.id)} className="action-button">
+                                Send Warning
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
-          ) : (
-            <p className="loading-text">Loading dashboard...</p>
+            </>
           )}
 
-          {/* Live Monitoring */}
-          <div className="monitoring-section">
-            <h2 className="section-title">Live Student Monitoring</h2>
-            
-            <div className="realtime-badge">
-              <span className="pulse-dot"></span>
-              <span className="realtime-text">Realtime Updates: {lastEvent}</span>
-            </div>
+          {/* User Management View */}
+          {activeView === "users" && (
+            <>
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">User Management</h1>
+                  <p className="page-subtitle">Create and manage student and admin accounts</p>
+                </div>
+              </div>
 
-            {/* Students Table */}
-            <div className="table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Student</th>
-                    <th>ID</th>
-                    <th>Status</th>
-                    <th>Camera</th>
-                    <th>Phone</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((student) => (
-                    <tr key={student.id}>
-                      <td className="student-name">{student.name}</td>
-                      <td className="student-id">{student.id}</td>
-                      <td>
-                        <span className="badge badge-status">{student.status}</span>
-                      </td>
-                      <td>
-                        <span className={student.cameraVerified ? "badge badge-verified" : "badge badge-unverified"}>
-                          {student.cameraVerified ? "Active" : "Not verified"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={student.phoneLinked ? "badge badge-verified" : "badge badge-unverified"}>
-                          {student.phoneLinked ? "Linked" : "Not linked"}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="action-cell">
-                          <input
-                            type="text"
-                            className="warning-input"
-                            placeholder="Warning message"
-                            value={warnings[student.id] ?? ""}
-                            onChange={(event) => {
-                              setWarnings((current) => ({ ...current, [student.id]: event.target.value }));
-                            }}
-                          />
-                          <button onClick={() => sendWarning(student.id)} className="action-button">
-                            Send Warning
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {/* Create User Form */}
+              <div className="user-form-section">
+                <h2 className="section-title">Create New User</h2>
+                <div className="user-form">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>First Name</label>
+                      <input
+                        type="text"
+                        value={newUserFirstName}
+                        onChange={(e) => setNewUserFirstName(e.target.value)}
+                        placeholder="Enter first name"
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Last Name</label>
+                      <input
+                        type="text"
+                        value={newUserLastName}
+                        onChange={(e) => setNewUserLastName(e.target.value)}
+                        placeholder="Enter last name"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Role</label>
+                      <select
+                        value={newUserRole}
+                        onChange={(e) => setNewUserRole(e.target.value as "student" | "admin")}
+                        className="form-select"
+                      >
+                        <option value="student">Student</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    {newUserRole === "student" && (
+                      <div className="form-group">
+                        <label>Classroom</label>
+                        <select
+                          value={newUserClassroom}
+                          onChange={(e) => setNewUserClassroom(e.target.value)}
+                          className="form-select"
+                        >
+                          <option value="">No classroom</option>
+                          {classrooms.map((classroom) => (
+                            <option key={classroom.id} value={classroom.id}>
+                              {classroom.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={createUser} className="create-user-button">
+                    Create User
+                  </button>
+                </div>
+              </div>
+
+              {/* Users List */}
+              <div className="monitoring-section">
+                <h2 className="section-title">All Users ({users.length})</h2>
+                <div className="table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Classroom</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user) => (
+                        <tr key={user.id}>
+                          <td className="student-name">{user.name}</td>
+                          <td className="student-id">{user.id}</td>
+                          <td>
+                            <span className={`badge ${user.role === "admin" ? "badge-verified" : "badge-status"}`}>
+                              {user.role}
+                            </span>
+                          </td>
+                          <td className="student-id">{user.classroomId || "-"}</td>
+                          <td>
+                            <div className="action-cell" style={{ gap: "8px" }}>
+                              <button onClick={() => resetPassword(user.id)} className="action-button" style={{ background: "#3b82f6" }}>
+                                Reset Password
+                              </button>
+                              <button onClick={() => deleteUser(user.id)} className="action-button" style={{ background: "#dc2626" }}>
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Credentials Modal */}
+          {showCredentials && createdCredentials && (
+            <div className="modal-overlay" onClick={() => setShowCredentials(false)}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <h2 className="modal-title">User Created Successfully!</h2>
+                <p className="modal-subtitle">Save these credentials and share them with the user</p>
+                
+                <div className="credentials-box">
+                  <div className="credential-item">
+                    <span className="credential-label">Name:</span>
+                    <span className="credential-value">{createdCredentials.name}</span>
+                    <button onClick={() => copyToClipboard(createdCredentials.name, "Name")} className="copy-button">Copy</button>
+                  </div>
+                  <div className="credential-item">
+                    <span className="credential-label">Username:</span>
+                    <span className="credential-value">{createdCredentials.username}</span>
+                    <button onClick={() => copyToClipboard(createdCredentials.username, "Username")} className="copy-button">Copy</button>
+                  </div>
+                  <div className="credential-item">
+                    <span className="credential-label">Password:</span>
+                    <span className="credential-value">{createdCredentials.password}</span>
+                    <button onClick={() => copyToClipboard(createdCredentials.password, "Password")} className="copy-button">Copy</button>
+                  </div>
+                  <div className="credential-item">
+                    <span className="credential-label">Role:</span>
+                    <span className="credential-value">{createdCredentials.role}</span>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button onClick={copyAllCredentials} className="copy-all-button">
+                    Copy All Credentials
+                  </button>
+                  <button onClick={() => setShowCredentials(false)} className="close-button">
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>

@@ -4,7 +4,7 @@ const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
 export async function apiRequest<T>(input: {
   path: string;
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
   auth?: AuthState | null;
 }): Promise<T> {
