@@ -59,6 +59,11 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const [showCredentials, setShowCredentials] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState<NewUserCredentials | null>(null);
   
+  // Custom modal states
+  const [alertModal, setAlertModal] = useState({ show: false, message: "" });
+  const [confirmModal, setConfirmModal] = useState<{ show: false } | { show: true; message: string; onConfirm: () => void }>({ show: false });
+  const [passwordResetModal, setPasswordResetModal] = useState<{ show: false } | { show: true; username: string; password: string }>({ show: false });
+  
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -176,10 +181,18 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     }
   }
 
+  function confirmDeleteUser(userId: string) {
+    if (!props.auth) return;
+    
+    setConfirmModal({
+      show: true,
+      message: "Are you sure you want to delete this user?",
+      onConfirm: () => deleteUser(userId)
+    });
+  }
+
   async function deleteUser(userId: string) {
-    if (!props.auth || !confirm("Are you sure you want to delete this user?")) {
-      return;
-    }
+    if (!props.auth) return;
 
     try {
       await apiRequest({
@@ -197,10 +210,18 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     }
   }
 
+  function confirmResetPassword(userId: string) {
+    if (!props.auth) return;
+    
+    setConfirmModal({
+      show: true,
+      message: "Generate a new password for this user?",
+      onConfirm: () => resetPassword(userId)
+    });
+  }
+
   async function resetPassword(userId: string) {
-    if (!props.auth || !confirm("Generate a new password for this user?")) {
-      return;
-    }
+    if (!props.auth) return;
 
     try {
       const response = await apiRequest<{ updated: boolean; userId: string; newPassword: string }>({
@@ -211,7 +232,11 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
       });
 
       if (response.updated) {
-        alert(`New password generated:\n\nUsername: ${userId}\nPassword: ${response.newPassword}\n\nMake sure to save this password!`);
+        setPasswordResetModal({
+          show: true,
+          username: userId,
+          password: response.newPassword
+        });
         setError(null);
       }
     } catch (err) {
@@ -221,9 +246,9 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
 
   function copyToClipboard(text: string, label: string) {
     navigator.clipboard.writeText(text).then(() => {
-      alert(`${label} copied to clipboard!`);
+      setAlertModal({ show: true, message: `${label} copied to clipboard!` });
     }).catch(() => {
-      alert(`Failed to copy ${label}`);
+      setAlertModal({ show: true, message: `Failed to copy ${label}` });
     });
   }
 
@@ -232,9 +257,9 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     
     const text = `Name: ${createdCredentials.name}\nUsername: ${createdCredentials.username}\nPassword: ${createdCredentials.password}\nRole: ${createdCredentials.role}`;
     navigator.clipboard.writeText(text).then(() => {
-      alert("All credentials copied to clipboard!");
+      setAlertModal({ show: true, message: "All credentials copied to clipboard!" });
     }).catch(() => {
-      alert("Failed to copy credentials");
+      setAlertModal({ show: true, message: "Failed to copy credentials" });
     });
   }
 
@@ -532,10 +557,10 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                           <td className="student-id">{user.classroomId || "-"}</td>
                           <td>
                             <div className="action-cell" style={{ gap: "8px" }}>
-                              <button onClick={() => resetPassword(user.id)} className="action-button" style={{ background: "#3b82f6" }}>
+                              <button onClick={() => confirmResetPassword(user.id)} className="action-button" style={{ background: "#3b82f6" }}>
                                 Reset Password
                               </button>
-                              <button onClick={() => deleteUser(user.id)} className="action-button" style={{ background: "#dc2626" }}>
+                              <button onClick={() => confirmDeleteUser(user.id)} className="action-button" style={{ background: "#dc2626" }}>
                                 Delete
                               </button>
                             </div>
@@ -583,6 +608,99 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                     Copy All Credentials
                   </button>
                   <button onClick={() => setShowCredentials(false)} className="close-button">
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Alert Modal */}
+          {alertModal.show && (
+            <div className="modal-overlay" onClick={() => setAlertModal({ show: false, message: "" })}>
+              <div className="modal-content-small" onClick={(e) => e.stopPropagation()}>
+                <div className="alert-modal-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="modal-title-center">{alertModal.message}</h2>
+                <div className="modal-actions-center">
+                  <button onClick={() => setAlertModal({ show: false, message: "" })} className="confirm-button">
+                    OK
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Confirm Modal */}
+          {confirmModal.show && (
+            <div className="modal-overlay" onClick={() => setConfirmModal({ show: false })}>
+              <div className="modal-content-small" onClick={(e) => e.stopPropagation()}>
+                <div className="confirm-modal-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h2 className="modal-title-center">{confirmModal.message}</h2>
+                <div className="modal-actions-center">
+                  <button 
+                    onClick={() => {
+                      confirmModal.onConfirm();
+                      setConfirmModal({ show: false });
+                    }} 
+                    className="confirm-button"
+                  >
+                    Confirm
+                  </button>
+                  <button onClick={() => setConfirmModal({ show: false })} className="cancel-button-modal">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Password Reset Success Modal */}
+          {passwordResetModal.show && (
+            <div className="modal-overlay" onClick={() => setPasswordResetModal({ show: false })}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="success-icon-large">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="modal-title">Password Reset Successful!</h2>
+                <p className="modal-subtitle">Make sure to save this password and share it with the user</p>
+                
+                <div className="credentials-box">
+                  <div className="credential-item">
+                    <span className="credential-label">Username:</span>
+                    <span className="credential-value">{passwordResetModal.username}</span>
+                    <button onClick={() => copyToClipboard(passwordResetModal.username, "Username")} className="copy-button">Copy</button>
+                  </div>
+                  <div className="credential-item">
+                    <span className="credential-label">New Password:</span>
+                    <span className="credential-value">{passwordResetModal.password}</span>
+                    <button onClick={() => copyToClipboard(passwordResetModal.password, "Password")} className="copy-button">Copy</button>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button 
+                    onClick={() => {
+                      const text = `Username: ${passwordResetModal.username}\\nNew Password: ${passwordResetModal.password}`;
+                      navigator.clipboard.writeText(text).then(() => {
+                        setAlertModal({ show: true, message: "Credentials copied to clipboard!" });
+                        setPasswordResetModal({ show: false });
+                      });
+                    }} 
+                    className="copy-all-button"
+                  >
+                    Copy Both
+                  </button>
+                  <button onClick={() => setPasswordResetModal({ show: false })} className="close-button">
                     Close
                   </button>
                 </div>
