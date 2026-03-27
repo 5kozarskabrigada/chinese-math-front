@@ -109,26 +109,29 @@ input:focus {
 }
 
 .password-wrapper input {
-  padding-right: 45px; /* Make room for the toggle button */
+  padding-right: 70px;
 }
 
 .password-toggle {
   position: absolute;
-  right: 12px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: var(--primary-blue);
   cursor: pointer;
-  padding: 4px;
-  font-size: 16px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  border-radius: 6px;
 }
 
 .password-toggle:hover {
-  color: var(--primary-blue);
+  background: var(--light-blue);
+  color: var(--primary-blue-hover);
 }
 
 button {
