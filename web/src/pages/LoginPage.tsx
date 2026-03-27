@@ -9,6 +9,7 @@ export function LoginPage(props: {
 }): JSX.Element {
   const [id, setId] = useState("stu-1001");
   const [password, setPassword] = useState("student123");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -38,23 +39,54 @@ export function LoginPage(props: {
   return (
     <main className="login-page">
       <section className="panel">
-        <h1>Secure Examination Login</h1>
-        <p className="muted">Use admin or student credentials to continue.</p>
+        <h1>Secure Exam Portal</h1>
+        <p className="muted">Welcome! Please sign in to continue to your examination dashboard.</p>
+        
         <form onSubmit={handleSubmit} className="stack">
-          <label>
-            ID
-            <input value={id} onChange={(event) => setId(event.target.value)} required />
-          </label>
-          <label>
-            Password
-            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
-          </label>
-          {error ? <div className="error">{error}</div> : null}
+          <div className="input-group">
+            <label>Student / Admin ID</label>
+            <input 
+              type="text"
+              value={id} 
+              onChange={(event) => setId(event.target.value)} 
+              placeholder="Enter your ID"
+              required 
+            />
+          </div>
+          
+          <div className="input-group">
+            <label>Password</label>
+            <div className="password-input">
+              <input 
+                type={showPassword ? "text" : "password"}
+                value={password} 
+                onChange={(event) => setPassword(event.target.value)} 
+                placeholder="Enter your password"
+                required 
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+          </div>
+          
+          {error ? <div className="error">❌ {error}</div> : null}
+          
           <button type="submit" disabled={loading}>
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
-        <div className="hint">Admin demo: admin-1 / admin123</div>
+        
+        <div className="hint">
+          <strong>Demo Accounts:</strong><br />
+          👨‍💼 Admin: admin-1 / admin123<br />
+          🎓 Student: stu-1001 / student123
+        </div>
       </section>
     </main>
   );

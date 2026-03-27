@@ -181,28 +181,80 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
   return (
     <main className="student-layout">
       <header className="exam-header">
-        <div>{profile.id} · Mathematics · Subject MATH-01</div>
-        <h1>Mathematics – National Standardized Test</h1>
-        <div className={remainingSeconds <= 300 ? "timer danger" : remainingSeconds <= 900 ? "timer warn" : "timer"}>{timerText}</div>
+        <div>👤 {profile.id} • 📚 Mathematics Test</div>
+        <h1>🧮 Mathematics National Exam</h1>
+        <div className={remainingSeconds <= 300 ? "timer danger" : remainingSeconds <= 900 ? "timer warn" : "timer"}>
+          ⏰ {timerText}
+        </div>
       </header>
 
-      <div className="warning-strip">Do not leave the exam interface. All actions are monitored.</div>
+      <div className="warning-strip">🚨 Stay focused! All activities are monitored for exam security</div>
 
       {!joinedExam ? (
-        <section className="panel stack">
-          <h2>Pre-Exam Verification</h2>
-          <p>1) Laptop camera verification 2) Phone camera linkage</p>
-          <div className="row">
-            <button onClick={verifyCamera} disabled={profile.cameraVerified}>{profile.cameraVerified ? "Camera Verified" : "Verify Camera"}</button>
-            <button onClick={linkPhone} disabled={profile.phoneLinked}>{profile.phoneLinked ? "Phone Linked" : "Link Phone"}</button>
+        <section className="pre-exam-section">
+          <div className="panel">
+            <h2>📋 Pre-Exam Setup</h2>
+            <p>Before starting your exam, we need to verify your identity and setup monitoring systems for exam integrity.</p>
+            
+            <div className="stack">
+              <div>
+                <h3 style={{ color: 'var(--primary-blue)', fontSize: '18px', marginBottom: '12px' }}>
+                  🎯 Verification Steps
+                </h3>
+                <div className="row">
+                  <button 
+                    className={profile.cameraVerified ? "success-button" : ""}
+                    onClick={verifyCamera} 
+                    disabled={profile.cameraVerified}
+                  >
+                    {profile.cameraVerified ? "✅ Camera Verified" : "📷 Verify Camera"}
+                  </button>
+                  <button 
+                    className={profile.phoneLinked ? "success-button" : ""}
+                    onClick={linkPhone} 
+                    disabled={profile.phoneLinked}
+                  >
+                    {profile.phoneLinked ? "✅ Phone Linked" : "📱 Link Phone"}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="input-group">
+                <label>🔐 Exam Access Code</label>
+                <input 
+                  value={examCode} 
+                  onChange={(event) => setExamCode(event.target.value)} 
+                  placeholder="Enter 6-digit code"
+                  maxLength={6}
+                  style={{ textAlign: 'center', fontSize: '20px', letterSpacing: '4px' }}
+                />
+              </div>
+              
+              {error ? <div className="error">❌ {error}</div> : null}
+              
+              <button 
+                onClick={startExam} 
+                disabled={!profile.cameraVerified || !profile.phoneLinked}
+                style={{ 
+                  padding: '16px 24px', 
+                  fontSize: '18px', 
+                  fontWeight: 'bold',
+                  background: (!profile.cameraVerified || !profile.phoneLinked) ? 'var(--text-muted)' : 'var(--primary-blue)'
+                }}
+              >
+                {(!profile.cameraVerified || !profile.phoneLinked) ? 
+                  "🔒 Complete Setup First" : 
+                  "🚀 Start Exam"
+                }
+              </button>
+              
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <button className="text-button" onClick={props.onLogout}>
+                  ← Back to Login
+                </button>
+              </div>
+            </div>
           </div>
-          <label>
-            Enter 6-digit exam code
-            <input value={examCode} onChange={(event) => setExamCode(event.target.value)} maxLength={6} />
-          </label>
-          <button onClick={startExam} disabled={!profile.cameraVerified || !profile.phoneLinked}>Start Exam</button>
-          {error ? <div className="error">{error}</div> : null}
-          <button className="text-button" onClick={props.onLogout}>Logout</button>
         </section>
       ) : (
         <section className="exam-shell">
@@ -235,22 +287,26 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
           </article>
 
           <footer className="control-bar">
-            <button>Previous</button>
-            <label><input type="checkbox" /> Mark for Review</label>
-            <button>Next</button>
+            <button>⬅️ Previous</button>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
+              <input type="checkbox" /> 🔖 Mark for Review
+            </label>
+            <button>Next ➡️</button>
             <button
-              className="danger"
+              className="danger-button"
               onClick={async () => {
-                await apiRequest({
-                  path: "/student/submit-exam",
-                  method: "POST",
-                  auth: props.auth,
-                  body: { examId: joinedExam.id }
-                });
-                setJoinedExam(null);
+                if (window.confirm('Are you sure you want to submit your exam? This action cannot be undone.')) {
+                  await apiRequest({
+                    path: "/student/submit-exam",
+                    method: "POST",
+                    auth: props.auth,
+                    body: { examId: joinedExam.id }
+                  });
+                  setJoinedExam(null);
+                }
               }}
             >
-              Submit Exam
+              📤 Submit Exam
             </button>
           </footer>
         </section>
