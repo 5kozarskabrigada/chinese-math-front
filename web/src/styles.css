@@ -110,20 +110,36 @@ input:focus {
 
 .password-toggle {
   position: absolute;
-  right: 12px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 4px;
-  font-size: 14px;
-  transition: color 0.2s ease;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
 }
 
 .password-toggle:hover {
   color: var(--primary-blue);
+  background: var(--light-blue);
+}
+
+.password-toggle:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.password-toggle svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
 }
 
 button {
