@@ -6,9 +6,9 @@
   --text-primary: #1f2937;
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;
-  --success: #059669;
-  --warning: #d97706;
-  --danger: #dc2626;
+  --success: #047857;
+  --warning: #92400e;
+  --danger: #991b1b;
   --background: #f9fafb;
   --surface: #ffffff;
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
@@ -209,33 +209,33 @@ button:disabled {
 }
 
 .success-button {
-  background: var(--success);
+  background: #4b5563;
 }
 
 .success-button:hover:not(:disabled) {
-  background: #047857;
+  background: #374151;
 }
 
 .warning-button {
-  background: var(--warning);
+  background: #6b7280;
 }
 
 .danger-button {
-  background: var(--danger);
+  background: #6b7280;
 }
 
 .danger-button:hover:not(:disabled) {
-  background: #b91c1c;
+  background: #4b5563;
 }
 
 .error {
-  color: var(--danger);
-  font-size: 14px;
+  color: var(--text-primary);
+  font-size: 13px;
   font-weight: 500;
   padding: 8px 12px;
-  background: #fef2f2;
-  border-radius: 8px;
-  border: 1px solid #fecaca;
+  background: #f3f4f6;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
 }
 
 .success {
@@ -410,13 +410,13 @@ button:disabled {
 
 .sidebar button {
   margin-top: 20px;
-  background: var(--danger);
-  border: 2px solid var(--danger);
+  background: var(--text-secondary);
+  border: 2px solid var(--text-secondary);
 }
 
 .sidebar button:hover {
-  background: #b91c1c;
-  border-color: #b91c1c;
+  background: var(--text-primary);
+  border-color: var(--text-primary);
 }
 
 .content {
@@ -509,8 +509,8 @@ button:disabled {
   top: 0;
   left: 0;
   right: 0;
-  height: 6px;
-  background: linear-gradient(90deg, var(--success), var(--primary-blue), var(--warning));
+  height: 4px;
+  background: var(--primary-blue);
 }
 
 .student-card:hover {
@@ -556,17 +556,18 @@ button:disabled {
 }
 
 .student-card button {
-  background: var(--warning);
-  border: 2px solid var(--warning);
-  padding: 12px 16px;
-  border-radius: 10px;
+  background: var(--text-secondary);
+  border: 2px solid var(--text-secondary);
+  padding: 10px 14px;
+  border-radius: 8px;
   font-weight: 600;
   margin-top: 8px;
+  font-size: 13px;
 }
 
 .student-card button:hover {
-  background: #d97706;
-  border-color: #d97706;
+  background: var(--text-primary);
+  border-color: var(--text-primary);
 }
 
 .student-grid {
@@ -630,33 +631,30 @@ button:disabled {
 }
 
 .timer.warn {
-  background: var(--warning);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .timer.danger {
-  background: var(--danger);
+  background: rgba(255, 255, 255, 0.25);
   color: white;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  border-color: rgba(255, 255, 255, 0.4);
+  animation: none;
 }
 
 .warning-strip {
-  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  background: var(--text-secondary);
   color: white;
   text-align: center;
-  padding: 8px;
+  padding: 6px;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .pre-exam-section {
-  padding: 20px 16px;
-  max-width: 85%;
+  padding: 16px 12px;
+  max-width: 75%;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -667,13 +665,20 @@ button:disabled {
 .pre-exam-section .panel {
   margin: 0;
   width: 100%;
-  max-width: 500px;
+  max-width: 420px;
+  padding: 20px;
 }
 
 .pre-exam-section h2 {
   color: var(--primary-blue);
-  font-size: 18px;
-  margin-bottom: 12px;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.pre-exam-section p {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
 }
 
 .row {
@@ -744,12 +749,12 @@ button:disabled {
   left: 50%;
   transform: translate(-50%, -50%);
   background: var(--surface);
-  border: 2px solid var(--danger);
-  border-radius: 16px;
-  padding: 32px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
   box-shadow: var(--shadow-lg);
   z-index: 1000;
-  max-width: 400px;
+  max-width: 360px;
   text-align: center;
 }
 

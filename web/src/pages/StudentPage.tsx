@@ -198,7 +198,7 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
             
             <div className="stack">
               <div>
-                <h3 style={{ color: 'var(--primary-blue)', fontSize: '18px', marginBottom: '12px' }}>
+                <h3 style={{ color: 'var(--primary-blue)', fontSize: '14px', marginBottom: '10px', fontWeight: '600' }}>
                   Verification Steps
                 </h3>
                 <div className="row">
@@ -226,7 +226,7 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
                   onChange={(event) => setExamCode(event.target.value)} 
                   placeholder="Enter 6-digit code"
                   maxLength={6}
-                  style={{ textAlign: 'center', fontSize: '20px', letterSpacing: '4px' }}
+                  style={{ textAlign: 'center', fontSize: '16px', letterSpacing: '3px' }}
                 />
               </div>
               
@@ -236,8 +236,8 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
                 onClick={startExam} 
                 disabled={!profile.cameraVerified || !profile.phoneLinked}
                 style={{ 
-                  padding: '16px 24px', 
-                  fontSize: '18px', 
+                  padding: '12px 20px', 
+                  fontSize: '14px', 
                   fontWeight: 'bold',
                   background: (!profile.cameraVerified || !profile.phoneLinked) ? 'var(--text-muted)' : 'var(--primary-blue)'
                 }}
@@ -248,7 +248,7 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
                 }
               </button>
               
-              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ textAlign: 'center', padding: '12px 0' }}>
                 <button className="text-button" onClick={props.onLogout}>
                   ← Back to Login
                 </button>
