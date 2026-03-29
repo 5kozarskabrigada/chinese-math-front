@@ -58,7 +58,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [lastEvent, setLastEvent] = useState<string>("No realtime events yet.");
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "users" | "classrooms" | "recycleBin">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "users" | "classrooms" | "students" | "recycleBin">("overview");
   
   // User creation form state
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -437,12 +437,12 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           <a className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => setActiveView("overview")}>Overview</a>
           <a className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => setActiveView("users")}>User Management</a>
           <a className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => setActiveView("classrooms")}>Classrooms</a>
-          <a className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={() => setActiveView("recycleBin")}>Recycle Bin</a>
-          <a className="nav-item">Students</a>
+          <a className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} onClick={() => setActiveView("students")}>Students</a>
           <a className="nav-item">Exams</a>
           <a className="nav-item">Live Monitoring</a>
           <a className="nav-item">Activity Logs</a>
           <a className="nav-item">Results</a>
+          <a className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={() => setActiveView("recycleBin")}>Recycle Bin</a>
           <a className="nav-item">Settings</a>
         </nav>
 
@@ -872,6 +872,76 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                   </div>
                 </>
               )}
+            </>
+          )}
+
+          {/* Students View */}
+          {activeView === "students" && (
+            <>
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">Student Management</h1>
+                  <p className="page-subtitle">View and manage all students</p>
+                </div>
+              </div>
+
+              <div className="content-area">
+                {students.length === 0 ? (
+                  <div className="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
+                    <h3>No students found</h3>
+                    <p>Students will appear here once they are created</p>
+                  </div>
+                ) : (
+                  <div className="table-container">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Classroom</th>
+                          <th>Status</th>
+                          <th>Camera Verified</th>
+                          <th>Phone Linked</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {students.map((student) => {
+                          const classroom = classrooms.find(c => c.id === student.id.split('-')[0]);
+                          return (
+                            <tr key={student.id}>
+                              <td className="name-cell">{student.name}</td>
+                              <td>{classroom?.name || 'N/A'}</td>
+                              <td>
+                                <span className={`status-badge status-${student.status.toLowerCase()}`}>
+                                  {student.status}
+                                </span>
+                              </td>
+                              <td>
+                                {student.cameraVerified ? (
+                                  <span className="badge-success">✓ Verified</span>
+                                ) : (
+                                  <span className="badge-warning">Not Verified</span>
+                                )}
+                              </td>
+                              <td>
+                                {student.phoneLinked ? (
+                                  <span className="badge-success">✓ Linked</span>
+                                ) : (
+                                  <span className="badge-warning">Not Linked</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </>
           )}
 

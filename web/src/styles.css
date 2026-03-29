@@ -2095,3 +2095,62 @@ button.danger,
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(245, 101, 101, 0.3);
 }
+
+/* Student Management Styles */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-idle {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-flagged {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status-terminated {
+  background: #f5c6cb;
+  color: #721c24;
+}
+
+.badge-success {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: #d4edda;
+  color: #155724;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+.badge-warning {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: #fff3cd;
+  color: #856404;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+.name-cell {
+  font-weight: 600;
+  color: #2d3748;
+}
