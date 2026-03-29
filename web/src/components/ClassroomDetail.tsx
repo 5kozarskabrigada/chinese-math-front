@@ -226,7 +226,7 @@ export function ClassroomDetail(props: ClassroomDetailProps): JSX.Element {
                   <option value="">-- Select a student --</option>
                   {availableStudents.map(s => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.id})
+                      {s.name}
                     </option>
                   ))}
                 </select>
@@ -306,7 +306,6 @@ export function ClassroomDetail(props: ClassroomDetailProps): JSX.Element {
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Student ID</th>
                   <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
@@ -314,7 +313,6 @@ export function ClassroomDetail(props: ClassroomDetailProps): JSX.Element {
                 {filteredStudents.map((student) => (
                   <tr key={student.id}>
                     <td className="student-name">{student.name}</td>
-                    <td className="student-id">{student.id}</td>
                     <td>
                       <div className="action-cell" style={{ justifyContent: "flex-end" }}>
                         <button

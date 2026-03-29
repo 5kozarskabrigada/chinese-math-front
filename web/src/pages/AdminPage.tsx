@@ -737,60 +737,75 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                   {/* Classrooms List */}
                   <div className="monitoring-section">
                     <h2 className="section-title">All Classrooms ({classrooms.length})</h2>
-                    <div className="table-container">
-                      <table className="data-table">
-                        <thead>
-                          <tr>
-                            <th>Classroom ID</th>
-                            <th>Name</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {classrooms.map((classroom) => (
-                            <tr 
+                    {classrooms.length === 0 ? (
+                      <div className="empty-state-box">
+                        <svg className="empty-icon" width="48" height="48" viewBox="0 0 24 24" fill="none">
+                          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M9 22V12h6v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <p className="empty-message">No classrooms yet. Create your first classroom above!</p>
+                      </div>
+                    ) : (
+                      <div className="classroom-grid">
+                        {classrooms.map((classroom) => {
+                          const studentCount = users.filter(u => u.classroomId === classroom.id).length;
+                          return (
+                            <div 
                               key={classroom.id} 
+                              className="classroom-card"
                               onClick={() => setSelectedClassroom(classroom.id)}
-                              style={{ cursor: "pointer" }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
-                              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                             >
-                              <td className="student-id">{classroom.id}</td>
-                              <td className="student-name">{classroom.name}</td>
-                              <td>
-                                <div className="action-cell" style={{ gap: "8px" }}>
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      startEditClassroom(classroom);
-                                    }} 
-                                    className="action-button" 
-                                    style={{ background: "#3b82f6" }}
-                                  >
-                                    Edit
-                                  </button>
-                                  <button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      confirmDeleteClassroom(classroom.id);
-                                    }} 
-                                    className="action-button" 
-                                    style={{ background: "#dc2626" }}
-                                  >
-                                    Delete
-                                  </button>
+                              <div className="classroom-card-header">
+                                <div className="classroom-card-icon">
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M9 22V12h6v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
                                 </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {classrooms.length === 0 && (
-                        <p style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>
-                          No classrooms yet. Create your first classroom above!
-                        </p>
-                      )}
-                    </div>
+                                <h3 className="classroom-card-title">{classroom.name}</h3>
+                              </div>
+                              <div className="classroom-card-stats">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                <span className="classroom-card-count">{studentCount} {studentCount === 1 ? 'student' : 'students'}</span>
+                              </div>
+                              <div className="classroom-card-actions">
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditClassroom(classroom);
+                                  }} 
+                                  className="classroom-action-btn classroom-edit-btn"
+                                  title="Edit classroom"
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                  Edit
+                                </button>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    confirmDeleteClassroom(classroom.id);
+                                  }} 
+                                  className="classroom-action-btn classroom-delete-btn"
+                                  title="Delete classroom"
+                                >
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </>
               )}

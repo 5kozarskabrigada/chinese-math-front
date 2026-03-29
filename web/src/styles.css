@@ -1651,6 +1651,132 @@ button:disabled {
   color: #ef4444;
 }
 
+/* Classroom Card Grid */
+.classroom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.classroom-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.classroom-card:hover {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  transform: translateY(-2px);
+  border-color: #1e40af;
+}
+
+.classroom-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.classroom-card-icon {
+  width: 40px;
+  height: 40px;
+  background: #eff6ff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1e40af;
+  flex-shrink: 0;
+}
+
+.classroom-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.classroom-card-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.classroom-card-count {
+  font-weight: 600;
+  color: #374151;
+}
+
+.classroom-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.classroom-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.classroom-edit-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.classroom-edit-btn:hover {
+  background: #e5e7eb;
+}
+
+.classroom-delete-btn {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.classroom-delete-btn:hover {
+  background: #fee2e2;
+}
+
+.empty-state-box {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border: 2px dashed #e5e7eb;
+  border-radius: 12px;
+  margin-top: 24px;
+}
+
+.empty-state-box .empty-icon {
+  color: #d1d5db;
+  margin: 0 auto 16px;
+}
+
+.empty-state-box .empty-message {
+  color: #6b7280;
+  font-size: 16px;
+  margin: 0;
+}
+
 .timer.danger {
   background: rgba(255, 255, 255, 0.25);
   color: white;
