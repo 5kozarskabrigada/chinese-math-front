@@ -48,7 +48,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [lastEvent, setLastEvent] = useState<string>("No realtime events yet.");
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "users">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "users" | "classrooms">("overview");
   
   // User creation form state
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -58,6 +58,11 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const [newUserClassroom, setNewUserClassroom] = useState("");
   const [showCredentials, setShowCredentials] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState<NewUserCredentials | null>(null);
+  
+  // Classroom management state
+  const [showClassroomForm, setShowClassroomForm] = useState(false);
+  const [editingClassroom, setEditingClassroom] = useState<{ id: string; name: string } | null>(null);
+  const [classroomName, setClassroomName] = useState("");
   
   // Custom modal states
   const [alertModal, setAlertModal] = useState({ show: false, message: "" });
@@ -263,6 +268,90 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     });
   }
 
+  // Classroom Management Functions
+  async function createOrUpdateClassroom() {
+    if (!props.auth || !classroomName.trim()) {
+      setError("Please enter a classroom name");
+      return;
+    }
+
+    try {
+      if (editingClassroom) {
+        // Update existing classroom
+        await apiRequest({
+          path: `/admin/classrooms/${editingClassroom.id}`,
+          method: "PATCH",
+          auth: props.auth,
+          body: { name: classroomName.trim() }
+        });
+        setAlertModal({ show: true, message: "Classroom updated successfully!" });
+      } else {
+        // Create new classroom
+        await apiRequest({
+          path: "/admin/classrooms",
+          method: "POST",
+          auth: props.auth,
+          body: { name: classroomName.trim() }
+        });
+        setAlertModal({ show: true, message: "Classroom created successfully!" });
+      }
+
+      // Refresh classrooms list
+      const classroomData = await apiRequest<Classroom[]>({ path: "/admin/classrooms", auth: props.auth });
+      setClassrooms(classroomData);
+      
+      // Reset form
+      setClassroomName("");
+      setEditingClassroom(null);
+      setShowClassroomForm(false);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save classroom");
+    }
+  }
+
+  function startEditClassroom(classroom: Classroom) {
+    setEditingClassroom(classroom);
+    setClassroomName(classroom.name);
+    setShowClassroomForm(true);
+  }
+
+  function cancelClassroomForm() {
+    setClassroomName("");
+    setEditingClassroom(null);
+    setShowClassroomForm(false);
+  }
+
+  function confirmDeleteClassroom(classroomId: string) {
+    if (!props.auth) return;
+    
+    setConfirmModal({
+      show: true,
+      message: "Are you sure you want to delete this classroom?",
+      onConfirm: () => deleteClassroom(classroomId)
+    });
+  }
+
+  async function deleteClassroom(classroomId: string) {
+    if (!props.auth) return;
+
+    try {
+      await apiRequest({
+        path: `/admin/classrooms/${classroomId}`,
+        method: "DELETE",
+        auth: props.auth
+      });
+
+      // Refresh classrooms list
+      const classroomData = await apiRequest<Classroom[]>({ path: "/admin/classrooms", auth: props.auth });
+      setClassrooms(classroomData);
+      setAlertModal({ show: true, message: "Classroom deleted successfully!" });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete classroom");
+    }
+  }
+
 
   return (
     <div className="admin-dashboard">
@@ -283,8 +372,8 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
         <nav className="sidebar-nav">
           <a className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => setActiveView("overview")}>Overview</a>
           <a className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => setActiveView("users")}>User Management</a>
+          <a className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => setActiveView("classrooms")}>Classrooms</a>
           <a className="nav-item">Students</a>
-          <a className="nav-item">Classrooms</a>
           <a className="nav-item">Exams</a>
           <a className="nav-item">Live Monitoring</a>
           <a className="nav-item">Activity Logs</a>
@@ -569,6 +658,103 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Classrooms View */}
+          {activeView === "classrooms" && (
+            <>
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">Classroom Management</h1>
+                  <p className="page-subtitle">Create and manage classrooms</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    if (showClassroomForm && !editingClassroom) {
+                      cancelClassroomForm();
+                    } else {
+                      setShowClassroomForm(true);
+                      setEditingClassroom(null);
+                      setClassroomName("");
+                    }
+                  }} 
+                  className="create-new-user-btn"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: "20px", height: "20px" }}>
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  {showClassroomForm && !editingClassroom ? "Cancel" : "Create New Classroom"}
+                </button>
+              </div>
+
+              {/* Create/Edit Classroom Form */}
+              {showClassroomForm && (
+                <div className="user-form-section">
+                  <h2 className="section-title">{editingClassroom ? "Edit Classroom" : "Create New Classroom"}</h2>
+                  <div className="user-form">
+                    <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                      <label>Classroom Name</label>
+                      <input
+                        type="text"
+                        value={classroomName}
+                        onChange={(e) => setClassroomName(e.target.value)}
+                        placeholder="Enter classroom name (e.g., Grade 10A, Math 101)"
+                        className="form-input"
+                      />
+                    </div>
+                    <div style={{ display: "flex", gap: "12px" }}>
+                      <button onClick={createOrUpdateClassroom} className="create-user-button">
+                        {editingClassroom ? "Update Classroom" : "Create Classroom"}
+                      </button>
+                      {editingClassroom && (
+                        <button onClick={cancelClassroomForm} className="cancel-button-modal" style={{ padding: "12px 24px" }}>
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Classrooms List */}
+              <div className="monitoring-section">
+                <h2 className="section-title">All Classrooms ({classrooms.length})</h2>
+                <div className="table-container">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Classroom ID</th>
+                        <th>Name</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {classrooms.map((classroom) => (
+                        <tr key={classroom.id}>
+                          <td className="student-id">{classroom.id}</td>
+                          <td className="student-name">{classroom.name}</td>
+                          <td>
+                            <div className="action-cell" style={{ gap: "8px" }}>
+                              <button onClick={() => startEditClassroom(classroom)} className="action-button" style={{ background: "#3b82f6" }}>
+                                Edit
+                              </button>
+                              <button onClick={() => confirmDeleteClassroom(classroom.id)} className="action-button" style={{ background: "#dc2626" }}>
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {classrooms.length === 0 && (
+                    <p style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>
+                      No classrooms yet. Create your first classroom above!
+                    </p>
+                  )}
                 </div>
               </div>
             </>
