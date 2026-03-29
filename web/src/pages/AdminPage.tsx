@@ -563,16 +563,16 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           </div>
         
         <nav className="sidebar-nav">
-          <a className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin")}>Overview</a>
-          <a className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/users")}>User Management</a>
-          <a className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/classrooms")}>Classrooms</a>
-          <a className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/students")}>Students</a>
-          <a className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/exams")}>Exams</a>
-          <a className="nav-item">Live Monitoring</a>
-          <a className="nav-item">Activity Logs</a>
-          <a className="nav-item">Results</a>
-          <a className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/recycle-bin")}>Recycle Bin</a>
-          <a className="nav-item">Settings</a>
+          <a className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={(e) => { e.preventDefault(); navigate("/admin"); }} href="#">Overview</a>
+          <a className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={(e) => { e.preventDefault(); navigate("/admin/users"); }} href="#">User Management</a>
+          <a className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={(e) => { e.preventDefault(); navigate("/admin/classrooms"); }} href="#">Classrooms</a>
+          <a className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} onClick={(e) => { e.preventDefault(); navigate("/admin/students"); }} href="#">Students</a>
+          <a className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} onClick={(e) => { e.preventDefault(); navigate("/admin/exams"); }} href="#">Exams</a>
+          <a className="nav-item" href="#" onClick={(e) => e.preventDefault()}>Live Monitoring</a>
+          <a className="nav-item" href="#" onClick={(e) => e.preventDefault()}>Activity Logs</a>
+          <a className="nav-item" href="#" onClick={(e) => e.preventDefault()}>Results</a>
+          <a className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={(e) => { e.preventDefault(); navigate("/admin/recycle-bin"); }} href="#">Recycle Bin</a>
+          <a className="nav-item" href="#" onClick={(e) => e.preventDefault()}>Settings</a>
         </nav>
 
         <div className="sidebar-footer">
