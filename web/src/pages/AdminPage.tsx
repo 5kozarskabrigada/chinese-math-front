@@ -3,6 +3,7 @@ import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 import { connectSocket } from "../lib/socket";
 import type { Socket } from "socket.io-client";
+import { ClassroomDetail } from "../components/ClassroomDetail";
 
 type DashboardData = {
   students: number;
@@ -63,6 +64,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const [showClassroomForm, setShowClassroomForm] = useState(false);
   const [editingClassroom, setEditingClassroom] = useState<{ id: string; name: string } | null>(null);
   const [classroomName, setClassroomName] = useState("");
+  const [selectedClassroom, setSelectedClassroom] = useState<string | null>(null);
   
   // Custom modal states
   const [alertModal, setAlertModal] = useState({ show: false, message: "" });
@@ -666,97 +668,132 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           {/* Classrooms View */}
           {activeView === "classrooms" && (
             <>
-              <div className="page-header">
-                <div>
-                  <h1 className="page-title">Classroom Management</h1>
-                  <p className="page-subtitle">Create and manage classrooms</p>
-                </div>
-                <button 
-                  onClick={() => {
-                    if (showClassroomForm && !editingClassroom) {
-                      cancelClassroomForm();
-                    } else {
-                      setShowClassroomForm(true);
-                      setEditingClassroom(null);
-                      setClassroomName("");
-                    }
-                  }} 
-                  className="create-new-user-btn"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: "20px", height: "20px" }}>
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
-                  {showClassroomForm && !editingClassroom ? "Cancel" : "Create New Classroom"}
-                </button>
-              </div>
-
-              {/* Create/Edit Classroom Form */}
-              {showClassroomForm && (
-                <div className="user-form-section">
-                  <h2 className="section-title">{editingClassroom ? "Edit Classroom" : "Create New Classroom"}</h2>
-                  <div className="user-form">
-                    <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                      <label>Classroom Name</label>
-                      <input
-                        type="text"
-                        value={classroomName}
-                        onChange={(e) => setClassroomName(e.target.value)}
-                        placeholder="Enter classroom name (e.g., Grade 10A, Math 101)"
-                        className="form-input"
-                      />
+              {selectedClassroom ? (
+                <ClassroomDetail
+                  classroomId={selectedClassroom}
+                  auth={props.auth}
+                  onBack={() => setSelectedClassroom(null)}
+                  onRefresh={() => {
+                    void Promise.all([
+                      apiRequest<Classroom[]>({ path: "/admin/classrooms", auth: props.auth }).then(setClassrooms)
+                    ]);
+                  }}
+                />
+              ) : (
+                <>
+                  <div className="page-header">
+                    <div>
+                      <h1 className="page-title">Classroom Management</h1>
+                      <p className="page-subtitle">Create and manage classrooms</p>
                     </div>
-                    <div style={{ display: "flex", gap: "12px" }}>
-                      <button onClick={createOrUpdateClassroom} className="create-user-button">
-                        {editingClassroom ? "Update Classroom" : "Create Classroom"}
-                      </button>
-                      {editingClassroom && (
-                        <button onClick={cancelClassroomForm} className="cancel-button-modal" style={{ padding: "12px 24px" }}>
-                          Cancel
-                        </button>
+                    <button 
+                      onClick={() => {
+                        if (showClassroomForm && !editingClassroom) {
+                          cancelClassroomForm();
+                        } else {
+                          setShowClassroomForm(true);
+                          setEditingClassroom(null);
+                          setClassroomName("");
+                        }
+                      }} 
+                      className="create-new-user-btn"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: "20px", height: "20px" }}>
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                      {showClassroomForm && !editingClassroom ? "Cancel" : "Create New Classroom"}
+                    </button>
+                  </div>
+
+                  {/* Create/Edit Classroom Form */}
+                  {showClassroomForm && (
+                    <div className="user-form-section">
+                      <h2 className="section-title">{editingClassroom ? "Edit Classroom" : "Create New Classroom"}</h2>
+                      <div className="user-form">
+                        <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                          <label>Classroom Name</label>
+                          <input
+                            type="text"
+                            value={classroomName}
+                            onChange={(e) => setClassroomName(e.target.value)}
+                            placeholder="Enter classroom name (e.g., Grade 10A, Math 101)"
+                            className="form-input"
+                          />
+                        </div>
+                        <div style={{ display: "flex", gap: "12px" }}>
+                          <button onClick={createOrUpdateClassroom} className="create-user-button">
+                            {editingClassroom ? "Update Classroom" : "Create Classroom"}
+                          </button>
+                          {editingClassroom && (
+                            <button onClick={cancelClassroomForm} className="cancel-button-modal" style={{ padding: "12px 24px" }}>
+                              Cancel
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Classrooms List */}
+                  <div className="monitoring-section">
+                    <h2 className="section-title">All Classrooms ({classrooms.length})</h2>
+                    <div className="table-container">
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Classroom ID</th>
+                            <th>Name</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {classrooms.map((classroom) => (
+                            <tr 
+                              key={classroom.id} 
+                              onClick={() => setSelectedClassroom(classroom.id)}
+                              style={{ cursor: "pointer" }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
+                              onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                            >
+                              <td className="student-id">{classroom.id}</td>
+                              <td className="student-name">{classroom.name}</td>
+                              <td>
+                                <div className="action-cell" style={{ gap: "8px" }}>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      startEditClassroom(classroom);
+                                    }} 
+                                    className="action-button" 
+                                    style={{ background: "#3b82f6" }}
+                                  >
+                                    Edit
+                                  </button>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      confirmDeleteClassroom(classroom.id);
+                                    }} 
+                                    className="action-button" 
+                                    style={{ background: "#dc2626" }}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {classrooms.length === 0 && (
+                        <p style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>
+                          No classrooms yet. Create your first classroom above!
+                        </p>
                       )}
                     </div>
                   </div>
-                </div>
+                </>
               )}
-
-              {/* Classrooms List */}
-              <div className="monitoring-section">
-                <h2 className="section-title">All Classrooms ({classrooms.length})</h2>
-                <div className="table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Classroom ID</th>
-                        <th>Name</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {classrooms.map((classroom) => (
-                        <tr key={classroom.id}>
-                          <td className="student-id">{classroom.id}</td>
-                          <td className="student-name">{classroom.name}</td>
-                          <td>
-                            <div className="action-cell" style={{ gap: "8px" }}>
-                              <button onClick={() => startEditClassroom(classroom)} className="action-button" style={{ background: "#3b82f6" }}>
-                                Edit
-                              </button>
-                              <button onClick={() => confirmDeleteClassroom(classroom.id)} className="action-button" style={{ background: "#dc2626" }}>
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {classrooms.length === 0 && (
-                    <p style={{ padding: "40px", textAlign: "center", color: "#6b7280" }}>
-                      No classrooms yet. Create your first classroom above!
-                    </p>
-                  )}
-                </div>
-              </div>
             </>
           )}
 
