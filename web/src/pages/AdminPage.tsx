@@ -4,6 +4,7 @@ import type { AuthState } from "../lib/auth";
 import { connectSocket } from "../lib/socket";
 import type { Socket } from "socket.io-client";
 import { ClassroomDetail } from "../components/ClassroomDetail";
+import { ExamEditor } from "../components/ExamEditor";
 
 type DashboardData = {
   students: number;
@@ -49,16 +50,26 @@ type DeletedItem = {
   deletedBy: string;
 };
 
+type Exam = {
+  id: string;
+  title: string;
+  code: string;
+  isActive: boolean;
+  timeLimitMinutes: number;
+  classroomIds?: string[];
+};
+
 export function AdminPage(props: { auth: AuthState | null; onLogout: () => void }): JSX.Element {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [exams, setExams] = useState<Exam[]>([]);
   const [deletedItems, setDeletedItems] = useState<DeletedItem[]>([]);
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [lastEvent, setLastEvent] = useState<string>("No realtime events yet.");
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "users" | "classrooms" | "students" | "recycleBin">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "users" | "classrooms" | "students" | "exams" | "recycleBin">("overview");
   
   // User creation form state
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -75,6 +86,10 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const [classroomName, setClassroomName] = useState("");
   const [selectedClassroom, setSelectedClassroom] = useState<string | null>(null);
   
+  // Exam management state
+  const [editingExamId, setEditingExamId] = useState<string | null>(null);
+  const [creatingExam, setCreatingExam] = useState(false);
+  
   // Custom modal states
   const [alertModal, setAlertModal] = useState({ show: false, message: "" });
   const [confirmModal, setConfirmModal] = useState<{ show: false } | { show: true; message: string; onConfirm: () => void }>({ show: false });
@@ -87,11 +102,12 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
 
     async function loadData() {
       try {
-        const [dashboardData, studentData, userData, classroomData, deletedData] = await Promise.all([
+        const [dashboardData, studentData, userData, classroomData, examData, deletedData] = await Promise.all([
           apiRequest<DashboardData>({ path: "/admin/dashboard", auth: props.auth }),
           apiRequest<Student[]>({ path: "/admin/students", auth: props.auth }),
           apiRequest<User[]>({ path: "/admin/users", auth: props.auth }),
           apiRequest<Classroom[]>({ path: "/admin/classrooms", auth: props.auth }),
+          apiRequest<Exam[]>({ path: "/admin/exams", auth: props.auth }),
           apiRequest<DeletedItem[]>({ path: "/admin/recycle-bin", auth: props.auth })
         ]);
 
@@ -100,6 +116,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           setStudents(studentData);
           setUsers(userData);
           setClassrooms(classroomData);
+          setExams(examData);
           setDeletedItems(deletedData);
         }
       } catch (requestError) {
@@ -416,6 +433,94 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     }
   }
 
+  // Exam management functions
+  async function saveExam(exam: any) {
+    if (!props.auth) return;
+
+    try {
+      if (editingExamId) {
+        // Update existing exam
+        await apiRequest({
+          path: `/admin/exams/${editingExamId}`,
+          method: "PATCH",
+          auth: props.auth,
+          body: exam
+        });
+        setAlertModal({ show: true, message: "Exam updated successfully!" });
+      } else {
+        // Create new exam
+        await apiRequest({
+          path: "/admin/exams",
+          method: "POST",
+          auth: props.auth,
+          body: exam
+        });
+        setAlertModal({ show: true, message: "Exam created successfully!" });
+      }
+
+      // Refresh exams list
+      const examData = await apiRequest<Exam[]>({ path: "/admin/exams", auth: props.auth });
+      setExams(examData);
+      
+      setCreatingExam(false);
+      setEditingExamId(null);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save exam");
+    }
+  }
+
+  async function toggleExamActive(examId: string, isActive: boolean) {
+    if (!props.auth) return;
+
+    try {
+      await apiRequest({
+        path: `/admin/exams/${examId}/activate`,
+        method: "PATCH",
+        auth: props.auth,
+        body: { isActive }
+      });
+
+      // Refresh exams list
+      const examData = await apiRequest<Exam[]>({ path: "/admin/exams", auth: props.auth });
+      setExams(examData);
+      
+      setAlertModal({ show: true, message: `Exam ${isActive ? 'activated' : 'deactivated'} successfully!` });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to toggle exam status");
+    }
+  }
+
+  function confirmDeleteExam(examId: string) {
+    setConfirmModal({
+      show: true,
+      message: "Delete this exam? It will be moved to the recycle bin.",
+      onConfirm: () => deleteExam(examId)
+    });
+  }
+
+  async function deleteExam(examId: string) {
+    if (!props.auth) return;
+
+    try {
+      await apiRequest({
+        path: `/admin/exams/${examId}`,
+        method: "DELETE",
+        auth: props.auth
+      });
+
+      // Refresh exams list
+      const examData = await apiRequest<Exam[]>({ path: "/admin/exams", auth: props.auth });
+      setExams(examData);
+      
+      setAlertModal({ show: true, message: "Exam moved to recycle bin!" });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete exam");
+    }
+  }
+
 
   return (
     <div className="admin-dashboard">
@@ -438,7 +543,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           <a className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => setActiveView("users")}>User Management</a>
           <a className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => setActiveView("classrooms")}>Classrooms</a>
           <a className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} onClick={() => setActiveView("students")}>Students</a>
-          <a className="nav-item">Exams</a>
+          <a className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} onClick={() => setActiveView("exams")}>Exams</a>
           <a className="nav-item">Live Monitoring</a>
           <a className="nav-item">Activity Logs</a>
           <a className="nav-item">Results</a>
@@ -867,6 +972,112 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                             </div>
                           );
                         })}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {/* Exams View */}
+          {activeView === "exams" && (
+            <>
+              {(creatingExam || editingExamId) ? (
+                <ExamEditor
+                  examId={editingExamId || undefined}
+                  auth={props.auth}
+                  onBack={() => {
+                    setCreatingExam(false);
+                    setEditingExamId(null);
+                  }}
+                  onSave={saveExam}
+                />
+              ) : (
+                <>
+                  <div className="page-header">
+                    <div>
+                      <h1 className="page-title">Exam Management</h1>
+                      <p className="page-subtitle">Create and manage mathematics exams</p>
+                    </div>
+                    <button className="primary-button" onClick={() => setCreatingExam(true)}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                      </svg>
+                      Create Exam
+                    </button>
+                  </div>
+
+                  <div className="content-area">
+                    {exams.length === 0 ? (
+                      <div className="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                          <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                        <h3>No exams created</h3>
+                        <p>Create your first exam to get started</p>
+                      </div>
+                    ) : (
+                      <div className="exams-grid">
+                        {exams.map((exam) => (
+                          <div key={exam.id} className="exam-card">
+                            <div className="exam-card-header">
+                              <div>
+                                <h3 className="exam-card-title">{exam.title}</h3>
+                                <p className="exam-card-code">Code: {exam.code}</p>
+                              </div>
+                              <div className={`exam-status ${exam.isActive ? 'status-active' : 'status-inactive'}`}>
+                                {exam.isActive ? '● Active' : '○ Inactive'}
+                              </div>
+                            </div>
+                            
+                            <div className="exam-card-details">
+                              <div className="exam-detail-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="10"/>
+                                  <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                                <span>{exam.timeLimitMinutes} minutes</span>
+                              </div>
+                              {exam.classroomIds && exam.classroomIds.length > 0 && (
+                                <div className="exam-detail-item">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                  </svg>
+                                  <span>{exam.classroomIds.length} classroom(s)</span>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="exam-card-actions">
+                              <button className="exam-action-btn exam-edit-btn" onClick={() => setEditingExamId(exam.id)}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                                Edit
+                              </button>
+                              <button className="exam-action-btn exam-toggle-btn" onClick={() => toggleExamActive(exam.id, !exam.isActive)}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="10"/>
+                                  <polyline points="10 8 16 12 10 16 10 8"/>
+                                </svg>
+                                {exam.isActive ? 'Deactivate' : 'Activate'}
+                              </button>
+                              <button className="exam-action-btn exam-delete-btn" onClick={() => confirmDeleteExam(exam.id)}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                </svg>
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
