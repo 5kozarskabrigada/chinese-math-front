@@ -410,12 +410,21 @@ button:disabled {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   margin-bottom: 6px;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
 }
 
-.nav-item:hover {
+.nav-item:hover:not(:disabled) {
   background: #f3f4f6;
   color: #1f2937;
   transform: translateX(4px);
+}
+
+.nav-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .nav-item-active {
