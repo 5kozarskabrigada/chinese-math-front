@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { AuthState } from "../lib/auth";
+import katex from "katex";
 
 type Question = {
   id: string;
@@ -26,73 +27,140 @@ type ExamEditorProps = {
   onSave: (exam: ExamData) => void;
 };
 
-// Math toolbar component
+// Math toolbar component with LaTeX support
 function MathToolbar({ onInsert }: { onInsert: (text: string) => void }) {
-  const symbols = [
-    { label: "√", value: "√" },
-    { label: "∫", value: "∫" },
-    { label: "∑", value: "∑" },
-    { label: "π", value: "π" },
-    { label: "∞", value: "∞" },
-    { label: "≤", value: "≤" },
-    { label: "≥", value: "≥" },
-    { label: "≠", value: "≠" },
-    { label: "±", value: "±" },
-    { label: "×", value: "×" },
-    { label: "÷", value: "÷" },
-    { label: "²", value: "²" },
-    { label: "³", value: "³" },
-    { label: "½", value: "½" },
-    { label: "¼", value: "¼" },
-    { label: "¾", value: "¾" },
-    { label: "°", value: "°" },
-    { label: "α", value: "α" },
-    { label: "β", value: "β" },
-    { label: "θ", value: "θ" },
+  const latexCommands = [
+    { label: "√ Square Root", value: "\\sqrt{}" },
+    { label: "ⁿ√ nth Root", value: "\\sqrt[n]{}" },
+    { label: "÷ Fraction", value: "\\frac{}{}" },
+    { label: "x² Power", value: "^{}" },
+    { label: "xₙ Subscript", value: "_{}" },
+    { label: "∑ Sum", value: "\\sum_{i=1}^{n}" },
+    { label: "∫ Integral", value: "\\int_{a}^{b}" },
+    { label: "√ Root", value: "\\sqrt{}" },
+    { label: "π Pi", value: "\\pi" },
+    { label: "∞ Infinity", value: "\\infty" },
+    { label: "≤ Less/Equal", value: "\\leq" },
+    { label: "≥ Greater/Equal", value: "\\geq" },
+    { label: "≠ Not Equal", value: "\\neq" },
+    { label: "± Plus/Minus", value: "\\pm" },
+    { label: "× Times", value: "\\times" },
+    { label: "÷ Divide", value: "\\div" },
+    { label: "° Degree", value: "^\\circ" },
+    { label: "α Alpha", value: "\\alpha" },
+    { label: "β Beta", value: "\\beta" },
+    { label: "θ Theta", value: "\\theta" },
   ];
 
   return (
     <div style={{
       display: 'flex',
       flexWrap: 'wrap',
-      gap: '3px',
-      padding: '6px',
-      background: '#f9fafb',
+      gap: '4px',
+      padding: '8px',
+      background: '#f0f9ff',
       borderRadius: '6px',
-      marginBottom: '6px',
-      border: '1px solid #e5e7eb'
+      marginBottom: '8px',
+      border: '1px solid #bae6fd'
     }}>
-      {symbols.map((sym, idx) => (
+      <div style={{
+        width: '100%',
+        fontSize: '11px',
+        fontWeight: 700,
+        color: '#0369a1',
+        marginBottom: '4px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>
+        LaTeX Math Toolbar - Click to insert
+      </div>
+      {latexCommands.map((cmd, idx) => (
         <button
           key={idx}
-          onClick={() => onInsert(sym.value)}
+          onClick={() => onInsert(cmd.value)}
           type="button"
+          title={`Insert: ${cmd.value}`}
           style={{
-            padding: '4px 8px',
+            padding: '5px 8px',
             background: 'white',
-            border: '1px solid #d1d5db',
+            border: '1px solid #93c5fd',
             borderRadius: '4px',
-            fontSize: '15px',
-            fontWeight: 500,
-            color: '#374151',
+            fontSize: '11px',
+            fontWeight: 600,
+            color: '#1e40af',
             cursor: 'pointer',
             transition: 'all 0.15s',
-            minWidth: '30px'
+            whiteSpace: 'nowrap'
           }}
           onMouseOver={e => {
-            e.currentTarget.style.background = '#6366f1';
+            e.currentTarget.style.background = '#3b82f6';
             e.currentTarget.style.color = 'white';
-            e.currentTarget.style.borderColor = '#6366f1';
+            e.currentTarget.style.borderColor = '#3b82f6';
           }}
           onMouseOut={e => {
             e.currentTarget.style.background = 'white';
-            e.currentTarget.style.color = '#374151';
-            e.currentTarget.style.borderColor = '#d1d5db';
+            e.currentTarget.style.color = '#1e40af';
+            e.currentTarget.style.borderColor = '#93c5fd';
           }}
         >
-          {sym.label}
+          {cmd.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+// LaTeX Preview Component
+function LatexPreview({ latex }: { latex: string }) {
+  const [html, setHtml] = useState<string>("");
+  const [error, setError] = useState<string>("");
+
+  useEffect(() => {
+    if (!latex.trim()) {
+      setHtml("");
+      setError("");
+      return;
+    }
+
+    try {
+      const rendered = katex.renderToString(latex, {
+        throwOnError: false,
+        displayMode: false,
+        output: 'html'
+      });
+      setHtml(rendered);
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Rendering error");
+    }
+  }, [latex]);
+
+  if (!latex.trim()) return null;
+
+  return (
+    <div style={{
+      padding: '10px',
+      background: error ? '#fef2f2' : '#f0fdf4',
+      border: `2px solid ${error ? '#fca5a5' : '#86efac'}`,
+      borderRadius: '6px',
+      marginTop: '8px',
+      fontSize: '16px'
+    }}>
+      <div style={{
+        fontSize: '10px',
+        fontWeight: 700,
+        color: error ? '#991b1b' : '#15803d',
+        marginBottom: '6px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px'
+      }}>
+        {error ? "⚠ LaTeX Error" : "✓ Preview"}
+      </div>
+      {error ? (
+        <div style={{ color: '#991b1b', fontSize: '12px' }}>{error}</div>
+      ) : (
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+      )}
     </div>
   );
 }
@@ -628,7 +696,7 @@ function QuestionEditorCard({
               border: '2px solid #e5e7eb',
               borderRadius: '8px',
               fontSize: '13px',
-              fontFamily: 'inherit',
+              fontFamily: 'monospace',
               resize: 'vertical',
               minHeight: '80px',
               lineHeight: '1.6',
@@ -637,8 +705,10 @@ function QuestionEditorCard({
             }}
             onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
             onMouseOut={e => activeField !== 'question' && (e.currentTarget.style.borderColor = '#e5e7eb')}
-            placeholder="Enter your question here... Use the toolbar above for math symbols"
+            placeholder="Enter question with LaTeX math: e.g., Solve \\sqrt{x+1} = 5"
           />
+          
+          <LatexPreview latex={question.content} />
         </div>
 
         {/* Options */}
@@ -770,6 +840,35 @@ function QuestionEditorCard({
 }
 
 // Student Preview Component
+// Render text with LaTeX support
+function RenderLatex({ text }: { text: string }) {
+  const [html, setHtml] = useState<string>("");
+
+  useEffect(() => {
+    if (!text) {
+      setHtml("");
+      return;
+    }
+
+    try {
+      // Try to render as LaTeX, fallback to plain text on error
+      const rendered = katex.renderToString(text, {
+        throwOnError: false,
+        displayMode: false,
+        output: 'html'
+      });
+      setHtml(rendered);
+    } catch (err) {
+      // If rendering fails, show plain text
+      setHtml(text);
+    }
+  }, [text]);
+
+  if (!html) return <span>{text || "(No text)"}</span>;
+
+  return <span dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
 function StudentPreview({ 
   exam, 
   currentQuestionIndex, 
@@ -910,7 +1009,7 @@ function StudentPreview({
             marginBottom: '24px',
             textAlign: 'center'
           }}>
-            {currentQuestion.content || "(No question text)"}
+            <RenderLatex text={currentQuestion.content} />
           </h3>
 
           {/* Options */}
@@ -968,7 +1067,7 @@ function StudentPreview({
                   color: '#111827',
                   fontWeight: 500
                 }}>
-                  {option || "(No option text)"}
+                  <RenderLatex text={option} />
                 </span>
 
                 {selectedAnswers[currentQuestionIndex] === optionIndex && (
