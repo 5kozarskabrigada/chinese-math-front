@@ -41,15 +41,24 @@ type Classroom = {
   name: string;
 };
 
+type DeletedItem = {
+  id: string;
+  type: "exam" | "question";
+  data: any;
+  deletedAt: string;
+  deletedBy: string;
+};
+
 export function AdminPage(props: { auth: AuthState | null; onLogout: () => void }): JSX.Element {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [deletedItems, setDeletedItems] = useState<DeletedItem[]>([]);
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [lastEvent, setLastEvent] = useState<string>("No realtime events yet.");
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "users" | "classrooms">("overview");
+  const [activeView, setActiveView] = useState<"overview" | "users" | "classrooms" | "recycleBin">("overview");
   
   // User creation form state
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -78,11 +87,12 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
 
     async function loadData() {
       try {
-        const [dashboardData, studentData, userData, classroomData] = await Promise.all([
+        const [dashboardData, studentData, userData, classroomData, deletedData] = await Promise.all([
           apiRequest<DashboardData>({ path: "/admin/dashboard", auth: props.auth }),
           apiRequest<Student[]>({ path: "/admin/students", auth: props.auth }),
           apiRequest<User[]>({ path: "/admin/users", auth: props.auth }),
-          apiRequest<Classroom[]>({ path: "/admin/classrooms", auth: props.auth })
+          apiRequest<Classroom[]>({ path: "/admin/classrooms", auth: props.auth }),
+          apiRequest<DeletedItem[]>({ path: "/admin/recycle-bin", auth: props.auth })
         ]);
 
         if (isMounted) {
@@ -90,6 +100,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           setStudents(studentData);
           setUsers(userData);
           setClassrooms(classroomData);
+          setDeletedItems(deletedData);
         }
       } catch (requestError) {
         if (isMounted) {
@@ -354,6 +365,57 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     }
   }
 
+  // Recycle bin functions
+  async function restoreItem(itemId: string) {
+    if (!props.auth) return;
+
+    try {
+      await apiRequest({
+        path: `/admin/recycle-bin/${itemId}/restore`,
+        method: "POST",
+        auth: props.auth
+      });
+
+      // Refresh deleted items
+      const deletedData = await apiRequest<DeletedItem[]>({ path: "/admin/recycle-bin", auth: props.auth });
+      setDeletedItems(deletedData);
+      
+      setAlertModal({ show: true, message: "Item restored successfully!" });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to restore item");
+    }
+  }
+
+  function confirmPermanentDelete(itemId: string) {
+    setConfirmModal({
+      show: true,
+      message: "Are you sure you want to permanently delete this item? This action cannot be undone.",
+      onConfirm: () => permanentlyDeleteItem(itemId)
+    });
+  }
+
+  async function permanentlyDeleteItem(itemId: string) {
+    if (!props.auth) return;
+
+    try {
+      await apiRequest({
+        path: `/admin/recycle-bin/${itemId}`,
+        method: "DELETE",
+        auth: props.auth
+      });
+
+      // Refresh deleted items
+      const deletedData = await apiRequest<DeletedItem[]>({ path: "/admin/recycle-bin", auth: props.auth });
+      setDeletedItems(deletedData);
+      
+      setAlertModal({ show: true, message: "Item permanently deleted!" });
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to permanently delete item");
+    }
+  }
+
 
   return (
     <div className="admin-dashboard">
@@ -375,6 +437,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           <a className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => setActiveView("overview")}>Overview</a>
           <a className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => setActiveView("users")}>User Management</a>
           <a className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => setActiveView("classrooms")}>Classrooms</a>
+          <a className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={() => setActiveView("recycleBin")}>Recycle Bin</a>
           <a className="nav-item">Students</a>
           <a className="nav-item">Exams</a>
           <a className="nav-item">Live Monitoring</a>
@@ -809,6 +872,98 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                   </div>
                 </>
               )}
+            </>
+          )}
+
+          {/* Recycle Bin View */}
+          {activeView === "recycleBin" && (
+            <>
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">Recycle Bin</h1>
+                  <p className="page-subtitle">Restore or permanently delete items</p>
+                </div>
+              </div>
+
+              <div className="content-area">
+                {deletedItems.length === 0 ? (
+                  <div className="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                      <path d="M10 11v6M14 11v6"/>
+                    </svg>
+                    <h3>Recycle bin is empty</h3>
+                    <p>Deleted exams and questions will appear here</p>
+                  </div>
+                ) : (
+                  <div className="recycle-bin-list">
+                    {deletedItems.map((item) => {
+                      const isExam = item.type === "exam";
+                      const itemData = item.data;
+                      const name = isExam ? itemData.title : itemData.text || itemData.question;
+                      
+                      return (
+                        <div key={item.id} className="recycle-bin-item">
+                          <div className="recycle-bin-item-icon">
+                            {isExam ? (
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                              </svg>
+                            ) : (
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                              </svg>
+                            )}
+                          </div>
+                          
+                          <div className="recycle-bin-item-details">
+                            <h4 className="recycle-bin-item-title">
+                              {name}
+                              <span className="recycle-bin-item-type">{isExam ? "Exam" : "Question"}</span>
+                            </h4>
+                            <p className="recycle-bin-item-metadata">
+                              Deleted {new Date(item.deletedAt).toLocaleString()} by {item.deletedBy}
+                            </p>
+                          </div>
+                          
+                          <div className="recycle-bin-item-actions">
+                            <button
+                              onClick={() => restoreItem(item.id)}
+                              className="restore-button"
+                              title="Restore item"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                              </svg>
+                              Restore
+                            </button>
+                            <button
+                              onClick={() => confirmPermanentDelete(item.id)}
+                              className="permanent-delete-button"
+                              title="Permanently delete"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                <line x1="10" y1="11" x2="10" y2="17"/>
+                                <line x1="14" y1="11" x2="14" y2="17"/>
+                              </svg>
+                              Delete Forever
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </>
           )}
 
