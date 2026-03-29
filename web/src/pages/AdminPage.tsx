@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 import { connectSocket } from "../lib/socket";
@@ -69,6 +70,8 @@ type Question = {
 };
 
 export function AdminPage(props: { auth: AuthState | null; onLogout: () => void }): JSX.Element {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -78,7 +81,23 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [lastEvent, setLastEvent] = useState<string>("No realtime events yet.");
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<"overview" | "users" | "classrooms" | "students" | "exams" | "recycleBin">("overview");
+  
+  // Determine active view from URL
+  const getActiveView = (): "overview" | "users" | "classrooms" | "students" | "exams" | "recycleBin" => {
+    const path = location.pathname;
+    if (path.includes('/users')) return 'users';
+    if (path.includes('/classrooms')) return 'classrooms';
+    if (path.includes('/students')) return 'students';
+    if (path.includes('/exams')) return 'exams';
+    if (path.includes('/recycle-bin')) return 'recycleBin';
+    return 'overview';
+  };
+  const activeView = getActiveView();
+  
+  // Check if we're in exam editor mode
+  const isEditingExam = location.pathname.includes('/exams/edit/');
+  const isCreatingExam = location.pathname === '/admin/exams/create';
+  const editingExamId = isEditingExam ? location.pathname.split('/').pop() : null;
   
   // User creation form state
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -94,10 +113,6 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const [editingClassroom, setEditingClassroom] = useState<{ id: string; name: string } | null>(null);
   const [classroomName, setClassroomName] = useState("");
   const [selectedClassroom, setSelectedClassroom] = useState<string | null>(null);
-  
-  // Exam management state
-  const [editingExamId, setEditingExamId] = useState<string | null>(null);
-  const [creatingExam, setCreatingExam] = useState(false);
   
   // Custom modal states
   const [alertModal, setAlertModal] = useState({ show: false, message: "" });
@@ -447,10 +462,10 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     if (!props.auth) return;
 
     try {
-      if (editingExamId) {
+      if (exam.id) {
         // Update existing exam
         await apiRequest({
-          path: `/admin/exams/${editingExamId}`,
+          path: `/admin/exams/${exam.id}`,
           method: "PATCH",
           auth: props.auth,
           body: exam
@@ -471,8 +486,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
       const examData = await apiRequest<Exam[]>({ path: "/admin/exams", auth: props.auth });
       setExams(examData);
       
-      setCreatingExam(false);
-      setEditingExamId(null);
+      navigate('/admin/exams');
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save exam");
@@ -534,7 +548,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   return (
     <div className="admin-dashboard">
       {/* Sidebar - Hide when editing exam */}
-      {!(activeView === "exams" && (creatingExam || editingExamId)) && (
+      {!(activeView === "exams" && (isCreatingExam || isEditingExam)) && (
         <aside className="admin-sidebar">
           <div className="sidebar-header">
             <div className="sidebar-icon">
@@ -549,15 +563,15 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           </div>
         
         <nav className="sidebar-nav">
-          <a className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => setActiveView("overview")}>Overview</a>
-          <a className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => setActiveView("users")}>User Management</a>
-          <a className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => setActiveView("classrooms")}>Classrooms</a>
-          <a className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} onClick={() => setActiveView("students")}>Students</a>
-          <a className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} onClick={() => setActiveView("exams")}>Exams</a>
+          <a className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin")}>Overview</a>
+          <a className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/users")}>User Management</a>
+          <a className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/classrooms")}>Classrooms</a>
+          <a className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/students")}>Students</a>
+          <a className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/exams")}>Exams</a>
           <a className="nav-item">Live Monitoring</a>
           <a className="nav-item">Activity Logs</a>
           <a className="nav-item">Results</a>
-          <a className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={() => setActiveView("recycleBin")}>Recycle Bin</a>
+          <a className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/recycle-bin")}>Recycle Bin</a>
           <a className="nav-item">Settings</a>
         </nav>
 
@@ -580,7 +594,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
       )}
 
       {/* Main Content */}
-      <main className={`admin-main ${(activeView === "exams" && (creatingExam || editingExamId)) ? 'fullscreen' : ''}`}>
+      <main className={`admin-main ${(activeView === "exams" && (isCreatingExam || isEditingExam)) ? 'fullscreen' : ''}`}>
         <div className="content-container">
           {error ? (
             <div className="alert-error" style={{ marginBottom: "24px", padding: "16px", background: "#fee2e2", color: "#991b1b", borderRadius: "8px" }}>{error}</div>
@@ -994,14 +1008,11 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           {/* Exams View */}
           {activeView === "exams" && (
             <>
-              {(creatingExam || editingExamId) ? (
+              {(isCreatingExam || isEditingExam) ? (
                 <ExamEditor
                   examId={editingExamId || undefined}
                   auth={props.auth}
-                  onBack={() => {
-                    setCreatingExam(false);
-                    setEditingExamId(null);
-                  }}
+                  onBack={() => navigate('/admin/exams')}
                   onSave={saveExam}
                 />
               ) : (
@@ -1011,7 +1022,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                       <h1 className="page-title">Exam Management</h1>
                       <p className="page-subtitle">Create and manage mathematics exams</p>
                     </div>
-                    <button className="primary-button" onClick={() => setCreatingExam(true)}>
+                    <button className="primary-button" onClick={() => navigate('/admin/exams/create')}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <line x1="12" y1="5" x2="12" y2="19"/>
                         <line x1="5" y1="12" x2="19" y2="12"/>
@@ -1039,7 +1050,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                           <div 
                             key={exam.id} 
                             className="exam-card"
-                            onClick={() => setEditingExamId(exam.id)}
+                            onClick={() => navigate(`/admin/exams/edit/${exam.id}`)}
                           >
                             <div className="exam-card-header">
                               <div>
@@ -1079,7 +1090,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                             </div>
 
                             <div className="exam-card-actions" onClick={(e) => e.stopPropagation()}>
-                              <button className="exam-action-btn exam-edit-btn" onClick={() => setEditingExamId(exam.id)}>
+                              <button className="exam-action-btn exam-edit-btn" onClick={() => navigate(`/admin/exams/edit/${exam.id}`)}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                                   <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>

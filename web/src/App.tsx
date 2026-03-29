@@ -42,7 +42,7 @@ export function App(): JSX.Element {
     <Routes>
       <Route path="/login" element={<LoginPage auth={auth} authActions={authActions} />} />
       <Route
-        path="/admin"
+        path="/admin/*"
         element={
           <ProtectedRoute auth={auth} role="admin">
             <AdminPage auth={auth} onLogout={authActions.logout} />
