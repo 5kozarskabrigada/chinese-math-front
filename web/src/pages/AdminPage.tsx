@@ -524,19 +524,20 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
 
   return (
     <div className="admin-dashboard">
-      {/* Sidebar */}
-      <aside className="admin-sidebar">
-        <div className="sidebar-header">
-          <div className="sidebar-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="icon-math">
-              <path d="M3 3h18M3 9h18M3 15h18M3 21h18M9 3v18M15 3v18" />
-            </svg>
+      {/* Sidebar - Hide when editing exam */}
+      {!(activeView === "exams" && (creatingExam || editingExamId)) && (
+        <aside className="admin-sidebar">
+          <div className="sidebar-header">
+            <div className="sidebar-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="icon-math">
+                <path d="M3 3h18M3 9h18M3 15h18M3 21h18M9 3v18M15 3v18" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="sidebar-title">Math Admin</h1>
+              <p className="sidebar-subtitle">Control Panel</p>
+            </div>
           </div>
-          <div>
-            <h1 className="sidebar-title">Math Admin</h1>
-            <p className="sidebar-subtitle">Control Panel</p>
-          </div>
-        </div>
         
         <nav className="sidebar-nav">
           <a className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => setActiveView("overview")}>Overview</a>
@@ -567,9 +568,10 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           </button>
         </div>
       </aside>
+      )}
 
       {/* Main Content */}
-      <main className="admin-main">
+      <main className={`admin-main ${(activeView === "exams" && (creatingExam || editingExamId)) ? 'fullscreen' : ''}`}>
         <div className="content-container">
           {error ? (
             <div className="alert-error" style={{ marginBottom: "24px", padding: "16px", background: "#fee2e2", color: "#991b1b", borderRadius: "8px" }}>{error}</div>
@@ -1025,7 +1027,11 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                     ) : (
                       <div className="exams-grid">
                         {exams.map((exam) => (
-                          <div key={exam.id} className="exam-card">
+                          <div 
+                            key={exam.id} 
+                            className="exam-card"
+                            onClick={() => setEditingExamId(exam.id)}
+                          >
                             <div className="exam-card-header">
                               <div>
                                 <h3 className="exam-card-title">{exam.title}</h3>
@@ -1054,7 +1060,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                               )}
                             </div>
 
-                            <div className="exam-card-actions">
+                            <div className="exam-card-actions" onClick={(e) => e.stopPropagation()}>
                               <button className="exam-action-btn exam-edit-btn" onClick={() => setEditingExamId(exam.id)}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -1062,14 +1068,14 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                                 </svg>
                                 Edit
                               </button>
-                              <button className="exam-action-btn exam-toggle-btn" onClick={() => toggleExamActive(exam.id, !exam.isActive)}>
+                              <button className="exam-action-btn exam-toggle-btn" onClick={(e) => { e.stopPropagation(); toggleExamActive(exam.id, !exam.isActive); }}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <circle cx="12" cy="12" r="10"/>
                                   <polyline points="10 8 16 12 10 16 10 8"/>
                                 </svg>
                                 {exam.isActive ? 'Deactivate' : 'Activate'}
                               </button>
-                              <button className="exam-action-btn exam-delete-btn" onClick={() => confirmDeleteExam(exam.id)}>
+                              <button className="exam-action-btn exam-delete-btn" onClick={(e) => { e.stopPropagation(); confirmDeleteExam(exam.id); }}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                                 </svg>

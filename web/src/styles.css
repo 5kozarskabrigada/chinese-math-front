@@ -505,6 +505,11 @@ button:disabled {
   background: #f9fafb;
 }
 
+.admin-main.fullscreen {
+  width: 100%;
+  max-width: 100%;
+}
+
 .content-container {
   padding: 32px;
   max-width: 1792px;
@@ -2171,11 +2176,13 @@ button.danger,
   display: flex;
   flex-direction: column;
   gap: 16px;
+  cursor: pointer;
 }
 
 .exam-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-color: #cbd5e0;
+  transform: translateY(-2px);
 }
 
 .exam-card-header {
