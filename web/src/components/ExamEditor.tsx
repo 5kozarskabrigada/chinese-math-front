@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { AuthState } from "../lib/auth";
+import { apiRequest } from "../lib/api";
 import katex from "katex";
 
 type Question = {
@@ -245,7 +246,7 @@ function InlineLatexEditor({
 export function ExamEditor(props: ExamEditorProps): JSX.Element {
   const [exam, setExam] = useState<ExamData>({
     title: "Untitled Exam",
-    code: generateExamCode(),
+    code: "",
     isActive: false,
     timeLimitMinutes: 60,
     classroomIds: [],
@@ -256,6 +257,35 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
   const [previewMode, setPreviewMode] = useState(false);
   const [previewQuestionIndex, setPreviewQuestionIndex] = useState(0);
   const [previewTimeLeft, setPreviewTimeLeft] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  // Load exam data when editing, or generate code for new exam
+  useEffect(() => {
+    async function loadExam() {
+      if (props.examId && props.auth) {
+        setLoading(true);
+        try {
+          const examData = await apiRequest<ExamData>({
+            path: `/admin/exams/${props.examId}`,
+            auth: props.auth
+          });
+          setExam(examData);
+        } catch (error) {
+          console.error('Failed to load exam:', error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Generate code for new exam only once
+        setExam(prev => ({
+          ...prev,
+          code: prev.code || generateExamCode()
+        }));
+      }
+    }
+
+    loadExam();
+  }, [props.examId, props.auth]);
 
   function generateExamCode(): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -320,6 +350,23 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
     setPreviewTimeLeft(exam.timeLimitMinutes * 60);
   }
 
+  function regenerateCode() {
+    if (confirm('Generate a new exam code? This will replace the current code.')) {
+      setExam(prev => ({ ...prev, code: generateExamCode() }));
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-sm text-gray-600">Loading exam...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (previewMode) {
     return <StudentPreview 
       exam={exam} 
@@ -331,227 +378,139 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
   }
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
-      {/* Top Bar */}
-      <div style={{
-        background: 'white',
-        borderBottom: '1px solid #e5e7eb',
-        padding: '10px 20px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
-            onClick={props.onBack}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '6px',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#374151',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            Back
-          </button>
-          
-          <input
-            type="text"
-            value={exam.title}
-            onChange={(e) => setExam(prev => ({ ...prev, title: e.target.value }))}
-            style={{
-              fontSize: '16px',
-              fontWeight: 700,
-              color: '#111827',
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-              padding: '4px 8px',
-              minWidth: '250px'
-            }}
-            placeholder="Exam Title"
-          />
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* Modern Header */}
+      <div className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={props.onBack}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Back
+              </button>
+              
+              <div className="h-8 w-px bg-gray-300"></div>
+              
+              <input
+                type="text"
+                value={exam.title}
+                onChange={(e) => setExam(prev => ({ ...prev, title: e.target.value }))}
+                className="text-xl font-bold text-gray-900 bg-transparent border-none outline-none focus:ring-0 min-w-[300px]"
+                placeholder="Exam Title"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={startPreview}
+                disabled={exam.questions.length === 0}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-indigo-600 bg-white border border-indigo-600 rounded-lg hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Preview
+              </button>
+              
+              <button 
+                onClick={() => props.onSave(exam)}
+                className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save Exam
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{
-            fontFamily: 'monospace',
-            fontSize: '13px',
-            fontWeight: 700,
-            color: '#6b7280',
-            background: '#f3f4f6',
-            padding: '6px 12px',
-            borderRadius: '6px',
-            letterSpacing: '1px'
-          }}>
-            {exam.code}
-          </span>
+        {/* Settings Bar */}
+        <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={exam.isActive}
+                  onChange={(e) => setExam(prev => ({ ...prev, isActive: e.target.checked }))}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span className="text-xs font-semibold text-gray-700">
+                {exam.isActive ? 'Active' : 'Draft'}
+              </span>
+            </div>
+            
+            <div className="h-5 w-px bg-gray-300"></div>
+            
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg">
+                <svg className="w-3.5 h-3.5 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <input
+                  type="number"
+                  value={exam.timeLimitMinutes}
+                  onChange={(e) => setExam(prev => ({ ...prev, timeLimitMinutes: parseInt(e.target.value) || 60 }))}
+                  className="w-12 text-sm font-semibold text-center bg-transparent border-none outline-none"
+                  min="1"
+                />
+                <span className="text-xs text-gray-500 font-medium">min</span>
+              </div>
+            </div>
 
-          <button 
-            onClick={startPreview}
-            disabled={exam.questions.length === 0}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
-              background: 'white',
-              border: '1px solid #6366f1',
-              borderRadius: '6px',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#6366f1',
-              cursor: exam.questions.length === 0 ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s',
-              opacity: exam.questions.length === 0 ? 0.5 : 1
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-            Preview
-          </button>
-          
-          <button 
-            onClick={() => props.onSave(exam)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '7px 16px',
-              background: '#6366f1',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: 'white',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              boxShadow: '0 2px 4px rgba(99, 102, 241, 0.3)'
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-              <polyline points="17 21 17 13 7 13 7 21"/>
-              <polyline points="7 3 7 8 15 8"/>
-            </svg>
-            Save Exam
-          </button>
-        </div>
-      </div>
+            <div className="h-5 w-px bg-gray-300"></div>
 
-      {/* Settings Bar */}
-      <div style={{
-        background: 'white',
-        borderBottom: '1px solid #e5e7eb',
-        padding: '10px 20px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={exam.isActive}
-              onChange={(e) => setExam(prev => ({ ...prev, isActive: e.target.checked }))}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: '#374151' }}>
-            {exam.isActive ? 'Active' : 'Draft'}
-          </span>
-        </div>
-        
-        <div style={{ width: '1px', height: '20px', background: '#d1d5db' }}></div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <input
-            type="number"
-            value={exam.timeLimitMinutes}
-            onChange={(e) => setExam(prev => ({ ...prev, timeLimitMinutes: parseInt(e.target.value) || 60 }))}
-            style={{
-              width: '55px',
-              padding: '4px 8px',
-              border: '1px solid #e5e7eb',
-              borderRadius: '4px',
-              textAlign: 'center',
-              fontSize: '12px',
-              fontWeight: 600
-            }}
-            min="1"
-          />
-          <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>min</span>
-        </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg group cursor-pointer" onClick={regenerateCode} title="Click to regenerate code">
+                <span className="font-mono text-sm font-bold text-gray-700 tracking-wider">{exam.code}</span>
+                <svg className="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                </svg>
+              </div>
+            </div>
 
-        <div style={{ width: '1px', height: '20px', background: '#d1d5db' }}></div>
+            <div className="h-5 w-px bg-gray-300"></div>
 
-        <div style={{
-          fontSize: '12px',
-          color: '#6b7280',
-          fontWeight: 500
-        }}>
-          {exam.questions.length} {exam.questions.length === 1 ? 'Question' : 'Questions'} • {exam.questions.reduce((sum, q) => sum + q.points, 0)} Points
+            <div className="text-xs text-gray-600 font-medium">
+              <span className="font-semibold text-gray-900">{exam.questions.length}</span> {exam.questions.length === 1 ? 'Question' : 'Questions'} • <span className="font-semibold text-gray-900">{exam.questions.reduce((sum, q) => sum + q.points, 0)}</span> Points
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-        <div style={{ maxWidth: '750px', margin: '0 auto' }}>
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-4xl mx-auto">
           {exam.questions.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '80px 40px',
-              background: 'white',
-              borderRadius: '16px',
-              border: '2px dashed #e5e7eb'
-            }}>
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" 
-                style={{ margin: '0 auto 20px', opacity: 0.3, color: '#9ca3af' }}>
+            <div className="text-center py-20 px-8 bg-white rounded-2xl border-2 border-dashed border-gray-300">
+              <svg className="w-16 h-16 mx-auto mb-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
               </svg>
-              <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', margin: '0 0 8px 0' }}>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
                 No questions yet
               </h3>
-              <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 24px 0' }}>
+              <p className="text-sm text-gray-600 mb-6">
                 Get started by adding your first multiple choice question
               </p>
               <button
                 onClick={addQuestion}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '12px 24px',
-                  background: '#6366f1',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: 'white',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 4px rgba(99, 102, 241, 0.3)'
-                }}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 shadow-sm hover:shadow-md transition-all duration-200"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19"/>
                   <line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
@@ -559,7 +518,7 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="flex flex-col gap-4">
               {exam.questions.map((question, index) => (
                 <QuestionEditorCard
                   key={question.id}
@@ -575,32 +534,9 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
               
               <button
                 onClick={addQuestion}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  padding: '14px',
-                  background: '#6366f1',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: 'white',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 2px 4px rgba(99, 102, 241, 0.3)'
-                }}
-                onMouseOver={e => {
-                  e.currentTarget.style.background = '#4f46e5';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseOut={e => {
-                  e.currentTarget.style.background = '#6366f1';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
+                className="flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19"/>
                   <line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
@@ -646,76 +582,38 @@ function QuestionEditorCard({
   }
 
   return (
-    <div
-      style={{
-        background: 'white',
-        borderRadius: '12px',
-        border: isSelected ? '2px solid #6366f1' : '1px solid #e5e7eb',
-        boxShadow: isSelected ? '0 4px 6px -1px rgba(99, 102, 241, 0.1)' : '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-        transition: 'all 0.2s'
-      }}
-    >
+    <div className={`bg-white rounded-xl transition-all duration-200 ${isSelected ? 'border-2 border-indigo-600 shadow-lg shadow-indigo-100' : 'border border-gray-200 shadow-sm'}`}>
       {/* Header */}
       <div 
         onClick={onSelect}
-        style={{
-          padding: '12px 16px',
-          borderBottom: '1px solid #f3f4f6',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          cursor: 'pointer',
-          background: isSelected ? '#f5f3ff' : 'transparent'
-        }}
+        className={`px-4 py-3 border-b border-gray-100 flex items-center justify-between cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50' : 'bg-transparent hover:bg-gray-50'}`}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{
-            background: '#6366f1',
-            color: 'white',
-            padding: '5px 10px',
-            borderRadius: '6px',
-            fontSize: '13px',
-            fontWeight: 700
-          }}>
+        <div className="flex items-center gap-3">
+          <span className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
             Q{index + 1}
           </span>
-          <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>
+          <span className="text-xs text-gray-600 font-medium">
             Multiple Choice
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="flex items-center gap-2">
           <input
             type="number"
             value={question.points}
             onChange={(e) => onChange({ points: parseInt(e.target.value) || 0 })}
             onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '50px',
-              padding: '5px 8px',
-              border: '1px solid #e5e7eb',
-              borderRadius: '6px',
-              textAlign: 'center',
-              fontSize: '12px',
-              fontWeight: 600
-            }}
+            className="w-14 px-2 py-1.5 border border-gray-300 rounded-lg text-center text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
             min="0"
           />
-          <span style={{ fontSize: '12px', color: '#6b7280', fontWeight: 500 }}>pts</span>
+          <span className="text-xs text-gray-600 font-medium">pts</span>
           
           <button
             onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-            style={{
-              padding: '5px 8px',
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              marginLeft: '6px'
-            }}
+            className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors ml-2"
             title="Duplicate"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="w-3.5 h-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
               <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
             </svg>
@@ -723,17 +621,10 @@ function QuestionEditorCard({
           
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            style={{
-              padding: '5px 8px',
-              background: 'white',
-              border: '1px solid #fca5a5',
-              borderRadius: '6px',
-              color: '#dc2626',
-              cursor: 'pointer'
-            }}
+            className="p-2 bg-white border border-red-300 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
             title="Delete"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="3 6 5 6 21 6"/>
               <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
             </svg>
@@ -742,18 +633,10 @@ function QuestionEditorCard({
       </div>
 
       {/* Content */}
-      <div style={{ padding: '14px' }}>
+      <div className="p-4">
         {/* Question Field */}
-        <div style={{ marginBottom: '14px' }}>
-          <label style={{ 
-            display: 'block', 
-            fontSize: '12px', 
-            fontWeight: 700, 
-            color: '#374151', 
-            marginBottom: '6px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
+        <div className="mb-4">
+          <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
             Question
           </label>
           
@@ -773,19 +656,11 @@ function QuestionEditorCard({
 
         {/* Options */}
         <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: '12px', 
-            fontWeight: 700, 
-            color: '#374151', 
-            marginBottom: '10px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
+          <label className="block text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">
             Answer Options
           </label>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="flex flex-col gap-3">
             {question.options.map((option, optionIndex) => (
               <div key={optionIndex}>
                 {activeField === `option-${optionIndex}` && (
@@ -797,48 +672,23 @@ function QuestionEditorCard({
                     e.stopPropagation();
                     onChange({ correctAnswer: optionIndex });
                   }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px',
-                    background: question.correctAnswer === optionIndex ? '#ecfdf5' : '#f9fafb',
-                    border: question.correctAnswer === optionIndex ? '2px solid #10b981' : '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseOver={e => {
-                    if (question.correctAnswer !== optionIndex) {
-                      e.currentTarget.style.borderColor = '#6366f1';
-                      e.currentTarget.style.background = '#f5f3ff';
-                    }
-                  }}
-                  onMouseOut={e => {
-                    if (question.correctAnswer !== optionIndex) {
-                      e.currentTarget.style.borderColor = '#e5e7eb';
-                      e.currentTarget.style.background = '#f9fafb';
-                    }
-                  }}
+                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                    question.correctAnswer === optionIndex 
+                      ? 'bg-emerald-50 border-2 border-emerald-500' 
+                      : 'bg-gray-50 border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50'
+                  }`}
                 >
                   {/* Radio button */}
-                  <div style={{
-                    width: '18px',
-                    height: '18px',
-                    borderRadius: '50%',
-                    border: question.correctAnswer === optionIndex ? '5px solid #10b981' : '2px solid #d1d5db',
-                    background: 'white',
-                    flexShrink: 0,
-                    transition: 'all 0.2s'
-                  }} />
+                  <div className={`w-5 h-5 rounded-full flex-shrink-0 transition-all duration-200 ${
+                    question.correctAnswer === optionIndex 
+                      ? 'border-[5px] border-emerald-500 bg-white' 
+                      : 'border-2 border-gray-400 bg-white'
+                  }`} />
 
                   {/* Option label */}
-                  <span style={{
-                    fontWeight: 700,
-                    color: question.correctAnswer === optionIndex ? '#065f46' : '#6b7280',
-                    minWidth: '24px',
-                    fontSize: '13px'
-                  }}>
+                  <span className={`font-bold min-w-[24px] text-sm ${
+                    question.correctAnswer === optionIndex ? 'text-emerald-700' : 'text-gray-600'
+                  }`}>
                     {String.fromCharCode(65 + optionIndex)}.
                   </span>
 
@@ -857,47 +707,19 @@ function QuestionEditorCard({
                     }}
                     onBlur={() => setTimeout(() => setActiveField(null), 200)}
                     onClick={(e) => e.stopPropagation()}
-                    style={{
-                      flex: 1,
-                      padding: '6px 10px',
-                      border: 'none',
-                      background: 'transparent',
-                      fontSize: '13px',
-                      outline: 'none',
-                      color: '#111827',
-                      fontWeight: 500
-                    }}
+                    className="flex-1 px-3 py-1.5 border-none bg-transparent text-sm outline-none font-medium"
                     placeholder={`Option ${String.fromCharCode(65 + optionIndex)}`}
                   />
-
-                  {/* Correct indicator */}
-                  {question.correctAnswer === optionIndex && (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  )}
                 </div>
               </div>
             ))}
-          </div>
-
-          <div style={{
-            marginTop: '12px',
-            padding: '12px',
-            background: '#fef3c7',
-            border: '1px solid #fcd34d',
-            borderRadius: '8px',
-            fontSize: '13px',
-            color: '#92400e',
-            fontWeight: 500
-          }}>
-            💡 Click on an option to mark it as the correct answer
           </div>
         </div>
       </div>
     </div>
   );
 }
+
 
 // Student Preview Component
 // Render text with LaTeX support

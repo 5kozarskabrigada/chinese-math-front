@@ -57,6 +57,15 @@ type Exam = {
   isActive: boolean;
   timeLimitMinutes: number;
   classroomIds?: string[];
+  questions?: Question[];
+};
+
+type Question = {
+  id: string;
+  content: string;
+  options: string[];
+  correctAnswer: number;
+  points: number;
 };
 
 export function AdminPage(props: { auth: AuthState | null; onLogout: () => void }): JSX.Element {
@@ -1050,6 +1059,15 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                                 </svg>
                                 <span>{exam.timeLimitMinutes} minutes</span>
                               </div>
+                              {exam.questions && exam.questions.length > 0 && (
+                                <div className="exam-detail-item">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                  </svg>
+                                  <span>{exam.questions.length} question{exam.questions.length === 1 ? '' : 's'}</span>
+                                </div>
+                              )}
                               {exam.classroomIds && exam.classroomIds.length > 0 && (
                                 <div className="exam-detail-item">
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
