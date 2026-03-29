@@ -111,9 +111,48 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
             <span>Overview</span>
           </button>
           
-          <div className="nav-section-title">Question Types</div>
+          <div style={{ 
+            fontSize: '11px', 
+            fontWeight: 700, 
+            color: '#9ca3af', 
+            textTransform: 'uppercase', 
+            letterSpacing: '0.5px', 
+            padding: '16px 12px 8px',
+            marginTop: '8px'
+          }}>
+            Question Types
+          </div>
           
-          <button onClick={() => addQuestion("multiple-choice")} className="nav-button">
+          <button 
+            onClick={() => addQuestion("multiple-choice")} 
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              textAlign: 'left',
+              marginBottom: '8px'
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = '#f0f9ff';
+              e.currentTarget.style.borderColor = '#6366f1';
+              e.currentTarget.style.color = '#6366f1';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#e5e7eb';
+              e.currentTarget.style.color = '#374151';
+            }}
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"/>
               <path d="M9 12l2 2 4-4"/>
@@ -121,7 +160,36 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
             <span>Multiple Choice</span>
           </button>
           
-          <button onClick={() => addQuestion("fill-blank")} className="nav-button">
+          <button 
+            onClick={() => addQuestion("fill-blank")} 
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              textAlign: 'left',
+              marginBottom: '8px'
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = '#f0f9ff';
+              e.currentTarget.style.borderColor = '#6366f1';
+              e.currentTarget.style.color = '#6366f1';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#e5e7eb';
+              e.currentTarget.style.color = '#374151';
+            }}
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="8" y1="12" x2="16" y2="12"/>
               <line x1="8" y1="12" x2="8" y2="12.01"/>
@@ -130,7 +198,36 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
             <span>Fill in Blank</span>
           </button>
           
-          <button onClick={() => addQuestion("short-answer")} className="nav-button">
+          <button 
+            onClick={() => addQuestion("short-answer")} 
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              textAlign: 'left',
+              marginBottom: '8px'
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = '#f0f9ff';
+              e.currentTarget.style.borderColor = '#6366f1';
+              e.currentTarget.style.color = '#6366f1';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#e5e7eb';
+              e.currentTarget.style.color = '#374151';
+            }}
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 20h9"/>
               <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -138,7 +235,36 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
             <span>Short Answer</span>
           </button>
           
-          <button onClick={() => addQuestion("multi-part")} className="nav-button">
+          <button 
+            onClick={() => addQuestion("multi-part")} 
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              textAlign: 'left',
+              marginBottom: '8px'
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = '#f0f9ff';
+              e.currentTarget.style.borderColor = '#6366f1';
+              e.currentTarget.style.color = '#6366f1';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#e5e7eb';
+              e.currentTarget.style.color = '#374151';
+            }}
+          >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="8" y1="6" x2="21" y2="6"/>
               <line x1="8" y1="12" x2="21" y2="12"/>
@@ -168,7 +294,31 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button onClick={() => setPreviewMode(!previewMode)} className="preview-button">
+              <button 
+                onClick={() => setPreviewMode(!previewMode)} 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 18px',
+                  background: 'white',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#374151',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.background = '#f9fafb';
+                  e.currentTarget.style.borderColor = '#9ca3af';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                }}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                   <circle cx="12" cy="12" r="3"/>
@@ -176,26 +326,54 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                 Preview
               </button>
               
-              <button onClick={() => props.onSave(exam)} className="save-button">
+              <button 
+                onClick={() => props.onSave(exam)} 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  background: '#6366f1',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 1px 3px 0 rgba(99, 102, 241, 0.3)'
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.background = '#4f46e5';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(99, 102, 241, 0.3)';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.background = '#6366f1';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(99, 102, 241, 0.3)';
+                }}
+              >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
                   <polyline points="17 21 17 13 7 13 7 21"/>
                   <polyline points="7 3 7 8 15 8"/>
                 </svg>
-                Save
+                Save Exam
               </button>
             </div>
           </div>
           
           {/* Control Panel */}
-          <div style={{ padding: '0 24px 16px' }}>
+          <div style={{ padding: '0 24px 20px' }}>
             <div style={{
-              padding: '16px',
+              padding: '20px',
               borderRadius: '12px',
               border: exam.isActive ? '2px solid #a7f3d0' : '2px solid #e5e7eb',
-              background: exam.isActive ? '#d1fae5' : '#f9fafb'
+              background: exam.isActive ? '#d1fae5' : 'white',
+              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <label className="toggle-switch">
                     <input
@@ -205,15 +383,15 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                     />
                     <span className="toggle-slider"></span>
                   </label>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#374151' }}>
                     {exam.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </div>
                 
-                <div style={{ width: '1px', height: '24px', background: '#d1d5db' }}></div>
+                <div style={{ width: '1px', height: '28px', background: '#d1d5db' }}></div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
                   </svg>
@@ -222,26 +400,28 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                     value={exam.timeLimitMinutes}
                     onChange={(e) => setExam(prev => ({ ...prev, timeLimitMinutes: parseInt(e.target.value) || 60 }))}
                     style={{
-                      width: '70px',
-                      padding: '6px 8px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
+                      width: '80px',
+                      padding: '8px 12px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
                       textAlign: 'center',
-                      fontSize: '14px'
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      background: 'white'
                     }}
                     min="1"
                   />
-                  <span style={{ fontSize: '14px', color: '#6b7280' }}>minutes</span>
+                  <span style={{ fontSize: '14px', color: '#6b7280', fontWeight: 500 }}>minutes</span>
                 </div>
                 
-                <div style={{ width: '1px', height: '24px', background: '#d1d5db' }}></div>
+                <div style={{ width: '1px', height: '28px', background: '#d1d5db' }}></div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
-                  <span style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <span style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
                     Code:
                   </span>
                   <span style={{
@@ -249,7 +429,10 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                     fontSize: '16px',
                     fontWeight: 700,
                     color: exam.isActive ? '#065f46' : '#374151',
-                    letterSpacing: '0.1em'
+                    letterSpacing: '0.1em',
+                    background: exam.isActive ? '#ecfdf5' : '#f3f4f6',
+                    padding: '6px 12px',
+                    borderRadius: '6px'
                   }}>
                     {exam.code}
                   </span>
@@ -260,82 +443,130 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
         </div>
 
         {/* Workspace */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '32px', background: '#f7fafc' }}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px', background: '#f3f4f6' }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             {!previewMode ? (
               <>
                 {/* Questions Section */}
                 <div style={{
                   background: 'white',
-                  borderRadius: '12px',
-                  border: '1px solid #e5e7eb',
-                  padding: '24px'
+                  borderRadius: '16px',
+                  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                  padding: '32px',
+                  marginBottom: '24px'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#111827', margin: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '16px', borderBottom: '2px solid #f3f4f6' }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', margin: 0 }}>
                       Questions ({exam.questions.length})
                     </h3>
-                    <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                      Total Points: {exam.questions.reduce((sum, q) => sum + q.points, 0)}
+                    <div style={{ 
+                      fontSize: '14px', 
+                      fontWeight: 600,
+                      color: '#6366f1',
+                      background: '#eef2ff',
+                      padding: '6px 12px',
+                      borderRadius: '8px'
+                    }}>
+                      Total: {exam.questions.reduce((sum, q) => sum + q.points, 0)} pts
                     </div>
                   </div>
 
                   {exam.questions.length === 0 ? (
                     <div style={{
                       textAlign: 'center',
-                      padding: '80px 20px',
-                      color: '#9ca3af'
+                      padding: '60px 20px',
+                      color: '#9ca3af',
+                      background: '#f9fafb',
+                      borderRadius: '12px',
+                      border: '2px dashed #e5e7eb'
                     }}>
-                      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ margin: '0 auto 16px', opacity: 0.5 }}>
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ margin: '0 auto 12px', opacity: 0.4 }}>
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                         <line x1="12" y1="17" x2="12.01" y2="17"></line>
                       </svg>
-                      <p style={{ fontSize: '16px', margin: 0 }}>No questions yet. Use the sidebar to add questions.</p>
+                      <p style={{ fontSize: '15px', margin: 0, fontWeight: 500 }}>No questions yet</p>
+                      <p style={{ fontSize: '13px', margin: '8px 0 0 0', color: '#d1d5db' }}>Use the sidebar to add questions</p>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {exam.questions.map((question, index) => (
                         <div
                           key={question.id}
                           onClick={() => setSelectedQuestionIndex(selectedQuestionIndex === index ? null : index)}
                           style={{
                             padding: '20px',
-                            border: selectedQuestionIndex === index ? '2px solid #2563eb' : '1px solid #e5e7eb',
+                            border: selectedQuestionIndex === index ? '2px solid #6366f1' : '1px solid #e5e7eb',
                             borderRadius: '12px',
-                            background: selectedQuestionIndex === index ? '#eff6ff' : 'white',
+                            background: selectedQuestionIndex === index ? '#f5f3ff' : 'white',
                             cursor: 'pointer',
-                            transition: 'all 0.15s'
+                            transition: 'all 0.2s ease',
+                            boxShadow: selectedQuestionIndex === index ? '0 4px 6px -1px rgba(99, 102, 241, 0.1), 0 2px 4px -1px rgba(99, 102, 241, 0.06)' : '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
                           }}
                         >
-                          <div style={{ fontWeight: 700, fontSize: '15px', color: '#111827', marginBottom: '12px' }}>
-                            Question {index + 1} • {question.type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} • {question.points} pts
+                          <div style={{ 
+                            fontWeight: 700, 
+                            fontSize: '14px', 
+                            color: selectedQuestionIndex === index ? '#4f46e5' : '#6b7280', 
+                            marginBottom: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}>
+                            <span style={{
+                              background: selectedQuestionIndex === index ? '#6366f1' : '#e5e7eb',
+                              color: selectedQuestionIndex === index ? 'white' : '#6b7280',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontSize: '13px',
+                              fontWeight: 700
+                            }}>
+                              Q{index + 1}
+                            </span>
+                            <span>{question.type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                            <span style={{
+                              marginLeft: 'auto',
+                              background: selectedQuestionIndex === index ? '#eef2ff' : '#f3f4f6',
+                              color: selectedQuestionIndex === index ? '#6366f1' : '#6b7280',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 600
+                            }}>
+                              {question.points} pts
+                            </span>
                           </div>
                           
                           <QuestionRenderer question={question} />
 
                           {selectedQuestionIndex === index && (
-                            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #e5e7eb' }}>
+                            <div 
+                              style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e5e7eb' }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <QuestionEditor
                                 question={question}
                                 onChange={(updates: Partial<Question>) => updateQuestion(index, updates)}
                               />
                               
-                              <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                              <div style={{ display: 'flex', gap: '8px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
                                 <button
                                   onClick={(e) => { e.stopPropagation(); moveQuestion(index, "up"); }}
                                   disabled={index === 0}
                                   style={{
-                                    padding: '8px 14px',
-                                    border: '1px solid #d1d5db',
+                                    padding: '10px 16px',
+                                    border: '1px solid #e5e7eb',
                                     background: 'white',
-                                    borderRadius: '6px',
+                                    borderRadius: '8px',
                                     fontSize: '13px',
-                                    fontWeight: 500,
+                                    fontWeight: 600,
                                     color: '#374151',
                                     cursor: index === 0 ? 'not-allowed' : 'pointer',
-                                    opacity: index === 0 ? 0.5 : 1
+                                    opacity: index === 0 ? 0.5 : 1,
+                                    transition: 'all 0.2s'
                                   }}
+                                  onMouseOver={e => !e.currentTarget.disabled && (e.currentTarget.style.background = '#f9fafb')}
+                                  onMouseOut={e => e.currentTarget.style.background = 'white'}
                                 >
                                   ↑ Move Up
                                 </button>
@@ -343,16 +574,19 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                                   onClick={(e) => { e.stopPropagation(); moveQuestion(index, "down"); }}
                                   disabled={index === exam.questions.length - 1}
                                   style={{
-                                    padding: '8px 14px',
-                                    border: '1px solid #d1d5db',
+                                    padding: '10px 16px',
+                                    border: '1px solid #e5e7eb',
                                     background: 'white',
-                                    borderRadius: '6px',
+                                    borderRadius: '8px',
                                     fontSize: '13px',
-                                    fontWeight: 500,
+                                    fontWeight: 600,
                                     color: '#374151',
                                     cursor: index === exam.questions.length - 1 ? 'not-allowed' : 'pointer',
-                                    opacity: index === exam.questions.length - 1 ? 0.5 : 1
+                                    opacity: index === exam.questions.length - 1 ? 0.5 : 1,
+                                    transition: 'all 0.2s'
                                   }}
+                                  onMouseOver={e => !e.currentTarget.disabled && (e.currentTarget.style.background = '#f9fafb')}
+                                  onMouseOut={e => e.currentTarget.style.background = 'white'}
                                 >
                                   ↓ Move Down
                                 </button>
@@ -360,14 +594,15 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                                   onClick={(e) => { e.stopPropagation(); deleteQuestion(index); }}
                                   style={{
                                     marginLeft: 'auto',
-                                    padding: '8px 14px',
+                                    padding: '10px 16px',
                                     border: '1px solid #fca5a5',
                                     background: 'white',
-                                    borderRadius: '6px',
+                                    borderRadius: '8px',
                                     fontSize: '13px',
-                                    fontWeight: 500,
+                                    fontWeight: 600,
                                     color: '#dc2626',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
                                   }}
                                   onMouseOver={e => e.currentTarget.style.background = '#fef2f2'}
                                   onMouseOut={e => e.currentTarget.style.background = 'white'}
@@ -396,29 +631,84 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
 // Question Renderer Component
 function QuestionRenderer({ question }: { question: Question }): JSX.Element {
   return (
-    <div className="question-content">
-      <div className="question-text">{question.content || "(Empty question)"}</div>
+    <div style={{ marginTop: '8px' }}>
+      <div style={{ 
+        fontSize: '15px', 
+        lineHeight: '1.6', 
+        color: '#111827', 
+        marginBottom: '16px',
+        fontWeight: 500 
+      }}>
+        {question.content || <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>(Empty question)</span>}
+      </div>
       
       {question.type === "multiple-choice" && question.options && (
-        <div className="mcq-options">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {question.options.map((option, idx) => (
-            <div key={idx} className="mcq-option">
-              <span className="option-label">({String.fromCharCode(65 + idx)})</span>
-              <span className="option-text">{option || "(Empty option)"}</span>
+            <div 
+              key={idx} 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                background: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                transition: 'all 0.2s'
+              }}
+            >
+              <span style={{ 
+                fontWeight: 700, 
+                color: '#6366f1',
+                minWidth: '28px',
+                height: '28px',
+                background: '#eef2ff',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '13px'
+              }}>
+                {String.fromCharCode(65 + idx)}
+              </span>
+              <span style={{ flex: 1, color: '#374151', fontSize: '14px' }}>
+                {option || <span style={{ color: '#d1d5db', fontStyle: 'italic' }}>(Empty option)</span>}
+              </span>
             </div>
           ))}
         </div>
       )}
 
       {question.type === "fill-blank" && (
-        <div className="fill-blank-preview">
-          <div className="blank-line">_________________</div>
+        <div style={{ marginTop: '12px' }}>
+          <div style={{
+            display: 'inline-block',
+            minWidth: '200px',
+            borderBottom: '2px solid #6366f1',
+            padding: '8px 0',
+            color: '#6b7280',
+            fontSize: '14px'
+          }}>
+            _________________
+          </div>
         </div>
       )}
 
       {question.type === "short-answer" && (
-        <div className="short-answer-preview">
-          <div className="answer-box">[Answer space]</div>
+        <div style={{ marginTop: '12px' }}>
+          <div style={{
+            padding: '40px 20px',
+            border: '2px dashed #d1d5db',
+            borderRadius: '8px',
+            color: '#9ca3af',
+            textAlign: 'center',
+            background: '#f9fafb',
+            fontSize: '13px',
+            fontWeight: 500
+          }}>
+            [Answer space]
+          </div>
         </div>
       )}
     </div>
@@ -428,13 +718,27 @@ function QuestionRenderer({ question }: { question: Question }): JSX.Element {
 // Question Editor Component
 function QuestionEditor({ question, onChange }: { question: Question; onChange: (updates: Partial<Question>) => void }): JSX.Element {
   return (
-    <div className="question-editor-panel">
+    <div className="question-editor-panel" onClick={(e) => e.stopPropagation()}>
       <div className="editor-field">
-        <label>Question Content</label>
+        <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Question Content</label>
         <textarea
           value={question.content}
           onChange={(e) => onChange({ content: e.target.value })}
-          className="question-textarea"
+          onClick={(e) => e.stopPropagation()}
+          onFocus={(e) => e.stopPropagation()}
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            resize: 'vertical',
+            minHeight: '100px',
+            transition: 'border-color 0.2s'
+          }}
+          onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+          onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
           placeholder="Enter question text..."
           rows={4}
         />
@@ -442,10 +746,21 @@ function QuestionEditor({ question, onChange }: { question: Question; onChange: 
 
       {question.type === "multiple-choice" && (
         <div className="editor-field">
-          <label>Options</label>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Options</label>
           {question.options?.map((option, idx) => (
-            <div key={idx} className="option-editor">
-              <span>({String.fromCharCode(65 + idx)})</span>
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ 
+                fontWeight: 700, 
+                color: '#6b7280',
+                minWidth: '32px',
+                background: '#f3f4f6',
+                padding: '8px 10px',
+                borderRadius: '6px',
+                fontSize: '13px',
+                textAlign: 'center'
+              }}>
+                {String.fromCharCode(65 + idx)}
+              </span>
               <input
                 type="text"
                 value={option}
@@ -454,17 +769,41 @@ function QuestionEditor({ question, onChange }: { question: Question; onChange: 
                   newOptions[idx] = e.target.value;
                   onChange({ options: newOptions });
                 }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  transition: 'border-color 0.2s'
+                }}
+                onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+                onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
                 placeholder={`Option ${String.fromCharCode(65 + idx)}`}
               />
             </div>
           ))}
           
-          <div className="editor-field">
-            <label>Correct Answer</label>
+          <div className="editor-field" style={{ marginTop: '16px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Correct Answer</label>
             <select
               value={question.correctAnswer as string}
               onChange={(e) => onChange({ correctAnswer: e.target.value })}
-              className="answer-select"
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.stopPropagation()}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '14px',
+                background: 'white',
+                transition: 'border-color 0.2s'
+              }}
+              onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+              onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
             >
               <option value="">Select correct answer</option>
               {question.options?.map((_, idx) => (
@@ -479,11 +818,23 @@ function QuestionEditor({ question, onChange }: { question: Question; onChange: 
 
       {question.type === "fill-blank" && (
         <div className="editor-field">
-          <label>Accepted Answer(s)</label>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Accepted Answer(s)</label>
           <input
             type="text"
             value={Array.isArray(question.correctAnswer) ? question.correctAnswer.join(", ") : question.correctAnswer}
             onChange={(e) => onChange({ correctAnswer: e.target.value.split(",").map(s => s.trim()) })}
+            onClick={(e) => e.stopPropagation()}
+            onFocus={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              transition: 'border-color 0.2s'
+            }}
+            onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+            onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
             placeholder="Enter accepted answers (comma-separated)"
           />
         </div>
@@ -491,11 +842,25 @@ function QuestionEditor({ question, onChange }: { question: Question; onChange: 
 
       {question.type === "short-answer" && (
         <div className="editor-field">
-          <label>Model Answer</label>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Model Answer</label>
           <textarea
             value={question.correctAnswer as string}
             onChange={(e) => onChange({ correctAnswer: e.target.value })}
-            className="question-textarea"
+            onClick={(e) => e.stopPropagation()}
+            onFocus={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontFamily: 'inherit',
+              resize: 'vertical',
+              minHeight: '80px',
+              transition: 'border-color 0.2s'
+            }}
+            onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+            onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
             placeholder="Enter model answer..."
             rows={3}
           />
@@ -503,22 +868,47 @@ function QuestionEditor({ question, onChange }: { question: Question; onChange: 
       )}
 
       <div className="editor-field">
-        <label>Points</label>
+        <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Points</label>
         <input
           type="number"
           value={question.points}
           onChange={(e) => onChange({ points: parseInt(e.target.value) || 0 })}
+          onClick={(e) => e.stopPropagation()}
+          onFocus={(e) => e.stopPropagation()}
           min="0"
-          className="points-input"
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '14px',
+            transition: 'border-color 0.2s'
+          }}
+          onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+          onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
         />
       </div>
 
       <div className="editor-field">
-        <label>Explanation (Optional)</label>
+        <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Explanation (Optional)</label>
         <textarea
           value={question.explanation || ""}
           onChange={(e) => onChange({ explanation: e.target.value })}
-          className="question-textarea"
+          onClick={(e) => e.stopPropagation()}
+          onFocus={(e) => e.stopPropagation()}
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            resize: 'vertical',
+            minHeight: '80px',
+            transition: 'border-color 0.2s'
+          }}
+          onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+          onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
           placeholder="Add solution explanation..."
           rows={3}
         />
