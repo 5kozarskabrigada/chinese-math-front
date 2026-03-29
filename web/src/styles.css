@@ -2201,92 +2201,128 @@ button.danger,
 /* Exam Management Styles */
 .exams-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 28px;
 }
 
 .exam-card {
   background: white;
-  border: 1px solid #e1e8ed;
-  border-radius: 12px;
-  padding: 20px;
-  transition: all 0.2s ease;
+  border: 1px solid #f3f4f6;
+  border-radius: 16px;
+  padding: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  overflow: hidden;
   cursor: pointer;
+  position: relative;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px 0 rgb(0 0 0 / 0.06);
+}
+
+.exam-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
 }
 
 .exam-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #cbd5e0;
-  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
+  border-color: #e0e7ff;
+  transform: translateY(-4px);
+}
+
+.exam-card:hover::before {
+  transform: scaleX(1);
 }
 
 .exam-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  padding: 24px 24px 16px 24px;
+  background: linear-gradient(180deg, #fafbff 0%, #ffffff 100%);
 }
 
 .exam-card-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #2d3748;
-  margin: 0 0 4px 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
 }
 
 .exam-card-code {
-  font-size: 13px;
-  color: #718096;
-  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #6366f1;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
   margin: 0;
+  font-weight: 700;
+  background: #eef2ff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
 }
 
 .exam-status {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 600;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .exam-status.status-active {
-  background: #d4edda;
-  color: #155724;
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1px solid #6ee7b7;
 }
 
 .exam-status.status-inactive {
-  background: #f8d7da;
-  color: #721c24;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #991b1b;
+  border: 1px solid #fca5a5;
 }
 
 .exam-card-details {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  padding: 0 24px 20px 24px;
 }
 
 .exam-detail-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: #4a5568;
+  gap: 10px;
+  color: #4b5563;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .exam-detail-item svg {
   flex-shrink: 0;
+  color: #6366f1;
 }
 
 .exam-card-actions {
   display: flex;
-  gap: 8px;
+  gap: 0;
   margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid #f3f4f6;
+  background: #fafbff;
 }
 
 .exam-action-btn {
@@ -2295,43 +2331,50 @@ button.danger,
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 14px 12px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
   border: none;
-  border-radius: 6px;
+  border-right: 1px solid #f3f4f6;
   cursor: pointer;
   transition: all 0.2s ease;
+  background: transparent;
+}
+
+.exam-action-btn:last-child {
+  border-right: none;
+}
+
+.exam-action-btn svg {
+  width: 15px;
+  height: 15px;
 }
 
 .exam-edit-btn {
-  background: #4299e1;
-  color: white;
+  color: #3b82f6;
 }
 
 .exam-edit-btn:hover {
-  background: #3182ce;
-  transform: translateY(-1px);
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1e40af;
 }
 
 .exam-toggle-btn {
-  background: #48bb78;
-  color: white;
+  color: #10b981;
 }
 
 .exam-toggle-btn:hover {
-  background: #38a169;
-  transform: translateY(-1px);
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #065f46;
 }
 
 .exam-delete-btn {
-  background: #f56565;
-  color: white;
+  color: #ef4444;
 }
 
 .exam-delete-btn:hover {
-  background: #e53e3e;
-  transform: translateY(-1px);
+  background: linear-gradient(180deg, #fef2f2 0%, #fee2e2 100%);
+  color: #991b1b;
 }
 
 /* Exam Editor Styles */

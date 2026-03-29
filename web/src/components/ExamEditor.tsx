@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { AuthState } from "../lib/auth";
 import katex from "katex";
 
@@ -110,56 +110,133 @@ function MathToolbar({ onInsert }: { onInsert: (text: string) => void }) {
   );
 }
 
-// LaTeX Preview Component
-function LatexPreview({ latex }: { latex: string }) {
-  const [html, setHtml] = useState<string>("");
-  const [error, setError] = useState<string>("");
+// Inline LaTeX Editor - Shows rendered math as you type
+function InlineLatexEditor({ 
+  value, 
+  onChange, 
+  onFocus, 
+  onBlur, 
+  placeholder,
+  isActive 
+}: { 
+  value: string;
+  onChange: (value: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  isActive?: boolean;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const renderLatex = (text: string): string => {
+    if (!text) return '';
+    
+    try {
+      // Check if text contains LaTeX commands
+      const hasLatex = /\\[a-zA-Z]+|\{|\}|\^|_/.test(text);
+      
+      if (hasLatex) {
+        // Render as LaTeX
+        return katex.renderToString(text, {
+          throwOnError: false,
+          displayMode: false,
+          output: 'html',
+          trust: true
+        });
+      } else {
+        // Return plain text wrapped in span
+        return `<span>${text || ''}</span>`;
+      }
+    } catch (err) {
+      // On error, show the raw text
+      return `<span style="color: #991b1b; font-family: monospace;">${text}</span>`;
+    }
+  };
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(value.length, value.length);
+      }
+    }, 0);
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      setIsEditing(false);
+      onBlur?.();
+    }, 200);
+  };
+
+  const handleFocus = () => {
+    setIsEditing(true);
+    onFocus?.();
+  };
 
   useEffect(() => {
-    if (!latex.trim()) {
-      setHtml("");
-      setError("");
-      return;
+    if (isActive && !isEditing) {
+      setIsEditing(true);
+      setTimeout(() => textareaRef.current?.focus(), 0);
     }
-
-    try {
-      const rendered = katex.renderToString(latex, {
-        throwOnError: false,
-        displayMode: false,
-        output: 'html'
-      });
-      setHtml(rendered);
-      setError("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Rendering error");
-    }
-  }, [latex]);
-
-  if (!latex.trim()) return null;
+  }, [isActive]);
 
   return (
     <div style={{
-      padding: '10px',
-      background: error ? '#fef2f2' : '#f0fdf4',
-      border: `2px solid ${error ? '#fca5a5' : '#86efac'}`,
-      borderRadius: '6px',
-      marginTop: '8px',
-      fontSize: '16px'
+      position: 'relative',
+      width: '100%',
+      minHeight: '80px'
     }}>
-      <div style={{
-        fontSize: '10px',
-        fontWeight: 700,
-        color: error ? '#991b1b' : '#15803d',
-        marginBottom: '6px',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px'
-      }}>
-        {error ? "⚠ LaTeX Error" : "✓ Preview"}
-      </div>
-      {error ? (
-        <div style={{ color: '#991b1b', fontSize: '12px' }}>{error}</div>
+      {isEditing ? (
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          placeholder={placeholder}
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '2px solid #6366f1',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontFamily: 'monospace',
+            resize: 'vertical',
+            minHeight: '80px',
+            lineHeight: '1.6',
+            outline: 'none',
+            background: '#fafbff',
+            color: '#1f2937'
+          }}
+        />
       ) : (
-        <div dangerouslySetInnerHTML={{ __html: html }} />
+        <div
+          onClick={handleEditClick}
+          style={{
+            width: '100%',
+            padding: '10px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '15px',
+            minHeight: '80px',
+            lineHeight: '1.6',
+            cursor: 'text',
+            background: 'white',
+            transition: 'all 0.2s',
+            color: value ? '#1f2937' : '#9ca3af'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.borderColor = '#6366f1'}
+          onMouseOut={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+        >
+          {value ? (
+            <div dangerouslySetInnerHTML={{ __html: renderLatex(value) }} />
+          ) : (
+            <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>{placeholder || 'Click to edit...'}</span>
+          )}
+        </div>
       )}
     </div>
   );
@@ -684,31 +761,14 @@ function QuestionEditorCard({
             <MathToolbar onInsert={(symbol) => insertMathSymbol('question', symbol)} />
           )}
           
-          <textarea
+          <InlineLatexEditor
             value={question.content}
-            onChange={(e) => onChange({ content: e.target.value })}
+            onChange={(value) => onChange({ content: value })}
             onFocus={() => setActiveField('question')}
             onBlur={() => setTimeout(() => setActiveField(null), 200)}
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '100%',
-              padding: '10px',
-              border: '2px solid #e5e7eb',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontFamily: 'monospace',
-              resize: 'vertical',
-              minHeight: '80px',
-              lineHeight: '1.6',
-              transition: 'border-color 0.2s',
-              outline: 'none'
-            }}
-            onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
-            onMouseOut={e => activeField !== 'question' && (e.currentTarget.style.borderColor = '#e5e7eb')}
             placeholder="Enter question with LaTeX math: e.g., Solve \\sqrt{x+1} = 5"
+            isActive={activeField === 'question'}
           />
-          
-          <LatexPreview latex={question.content} />
         </div>
 
         {/* Options */}
