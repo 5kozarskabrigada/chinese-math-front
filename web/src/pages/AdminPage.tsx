@@ -562,16 +562,16 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           </div>
         
         <nav className="sidebar-nav">
-          <button className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin")}>Overview</button>
-          <button className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/users")}>User Management</button>
-          <button className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/classrooms")}>Classrooms</button>
-          <button className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/students")}>Students</button>
-          <button className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/exams")}>Exams</button>
-          <button className="nav-item" disabled>Live Monitoring</button>
-          <button className="nav-item" disabled>Activity Logs</button>
-          <button className="nav-item" disabled>Results</button>
-          <button className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/recycle-bin")}>Recycle Bin</button>
-          <button className="nav-item" disabled>Settings</button>
+          <button type="button" className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin")}>Overview</button>
+          <button type="button" className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/users")}>User Management</button>
+          <button type="button" className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/classrooms")}>Classrooms</button>
+          <button type="button" className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/students")}>Students</button>
+          <button type="button" className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/exams")}>Exams</button>
+          <button type="button" className="nav-item" disabled>Live Monitoring</button>
+          <button type="button" className="nav-item" disabled>Activity Logs</button>
+          <button type="button" className="nav-item" disabled>Results</button>
+          <button type="button" className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/recycle-bin")}>Recycle Bin</button>
+          <button type="button" className="nav-item" disabled>Settings</button>
         </nav>
 
         <div className="sidebar-footer">
