@@ -73,6 +73,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     if (path.includes('/students')) return 'students';
     if (path.includes('/exams')) return 'exams';
     if (path.includes('/recycle-bin')) return 'recycleBin';
+    // Handle /admin and /admin/ as overview
     return 'overview';
   };
   const activeView = getActiveView();
@@ -80,7 +81,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   
   // Check if we're in exam editor mode
   const isEditingExam = location.pathname.includes('/exams/edit/');
-  const isCreatingExam = location.pathname === '/admin/exams/create';
+  const isCreatingExam = location.pathname.endsWith('/exams/create');
   const editingExamId = isEditingExam ? location.pathname.split('/').pop() : null;
   
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
