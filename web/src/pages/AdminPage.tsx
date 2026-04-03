@@ -562,15 +562,81 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           </div>
         
         <nav className="sidebar-nav">
-          <button type="button" className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin")}>Overview</button>
-          <button type="button" className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/users")}>User Management</button>
-          <button type="button" className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/classrooms")}>Classrooms</button>
-          <button type="button" className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/students")}>Students</button>
-          <button type="button" className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/exams")}>Exams</button>
+          <button 
+            type="button" 
+            className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Clicked Overview - navigating to /admin');
+              navigate("/admin");
+            }}
+          >
+            Overview
+          </button>
+          <button 
+            type="button" 
+            className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Clicked Users - navigating to /admin/users');
+              navigate("/admin/users");
+            }}
+          >
+            User Management
+          </button>
+          <button 
+            type="button" 
+            className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Clicked Classrooms - navigating to /admin/classrooms');
+              navigate("/admin/classrooms");
+            }}
+          >
+            Classrooms
+          </button>
+          <button 
+            type="button" 
+            className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Clicked Students - navigating to /admin/students');
+              navigate("/admin/students");
+            }}
+          >
+            Students
+          </button>
+          <button 
+            type="button" 
+            className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Clicked Exams - navigating to /admin/exams');
+              navigate("/admin/exams");
+            }}
+          >
+            Exams
+          </button>
           <button type="button" className="nav-item" disabled>Live Monitoring</button>
           <button type="button" className="nav-item" disabled>Activity Logs</button>
           <button type="button" className="nav-item" disabled>Results</button>
-          <button type="button" className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/recycle-bin")}>Recycle Bin</button>
+          <button 
+            type="button" 
+            className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Clicked Recycle Bin - navigating to /admin/recycle-bin');
+              navigate("/admin/recycle-bin");
+            }}
+          >
+            Recycle Bin
+          </button>
           <button type="button" className="nav-item" disabled>Settings</button>
         </nav>
 
