@@ -58,20 +58,29 @@ type Exam = {
   isActive: boolean;
   timeLimitMinutes: number;
   classroomIds?: string[];
-  questions?: Question[];
-};
-
-type Question = {
-  id: string;
-  content: string;
-  options: string[];
-  correctAnswer: number;
-  points: number;
 };
 
 export function AdminPage(props: { auth: AuthState | null; onLogout: () => void }): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Derive active view and exam editor state from URL
+  const getActiveView = (): "overview" | "users" | "classrooms" | "students" | "exams" | "recycleBin" => {
+    const path = location.pathname;
+    if (path.includes('/users')) return 'users';
+    if (path.includes('/classrooms')) return 'classrooms';
+    if (path.includes('/students')) return 'students';
+    if (path.includes('/exams')) return 'exams';
+    if (path.includes('/recycle-bin')) return 'recycleBin';
+    return 'overview';
+  };
+  const activeView = getActiveView();
+  
+  // Check if we're in exam editor mode
+  const isEditingExam = location.pathname.includes('/exams/edit/');
+  const isCreatingExam = location.pathname === '/admin/exams/create';
+  const editingExamId = isEditingExam ? location.pathname.split('/').pop() : null;
+  
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -81,25 +90,6 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [lastEvent, setLastEvent] = useState<string>("No realtime events yet.");
   const [error, setError] = useState<string | null>(null);
-  
-  // Determine active view from URL
-  const getActiveView = (): "overview" | "users" | "classrooms" | "students" | "exams" | "recycleBin" => {
-    const path = location.pathname;
-    console.log('Current pathname:', path); // Debug log
-    if (path.includes('/users')) return 'users';
-    if (path.includes('/classrooms')) return 'classrooms';
-    if (path.includes('/students')) return 'students';
-    if (path.includes('/exams')) return 'exams';
-    if (path.includes('/recycle-bin')) return 'recycleBin';
-    return 'overview';
-  };
-  const activeView = getActiveView();
-  console.log('Active view:', activeView); // Debug log
-  
-  // Check if we're in exam editor mode
-  const isEditingExam = location.pathname.includes('/exams/edit/');
-  const isCreatingExam = location.pathname === '/admin/exams/create';
-  const editingExamId = isEditingExam ? location.pathname.split('/').pop() : null;
   
   // User creation form state
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -464,10 +454,15 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     if (!props.auth) return;
 
     try {
-      if (exam.id) {
+      // Derive editingExamId from URL
+      const currentEditingId = location.pathname.includes('/exams/edit/') 
+        ? location.pathname.split('/').pop() 
+        : null;
+
+      if (currentEditingId) {
         // Update existing exam
         await apiRequest({
-          path: `/admin/exams/${exam.id}`,
+          path: `/admin/exams/${currentEditingId}`,
           method: "PATCH",
           auth: props.auth,
           body: exam
@@ -565,16 +560,16 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           </div>
         
         <nav className="sidebar-nav">
-          <button type="button" className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin")}>Overview</button>
-          <button type="button" className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/users")}>User Management</button>
-          <button type="button" className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/classrooms")}>Classrooms</button>
-          <button type="button" className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/students")}>Students</button>
-          <button type="button" className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/exams")}>Exams</button>
-          <button type="button" className="nav-item" disabled>Live Monitoring</button>
-          <button type="button" className="nav-item" disabled>Activity Logs</button>
-          <button type="button" className="nav-item" disabled>Results</button>
-          <button type="button" className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/recycle-bin")}>Recycle Bin</button>
-          <button type="button" className="nav-item" disabled>Settings</button>
+          <button className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin")}>Overview</button>
+          <button className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/users")}>User Management</button>
+          <button className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/classrooms")}>Classrooms</button>
+          <button className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/students")}>Students</button>
+          <button className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/exams")}>Exams</button>
+          <button className="nav-item" disabled>Live Monitoring</button>
+          <button className="nav-item" disabled>Activity Logs</button>
+          <button className="nav-item" disabled>Results</button>
+          <button className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} onClick={() => navigate("/admin/recycle-bin")}>Recycle Bin</button>
+          <button className="nav-item" disabled>Settings</button>
         </nav>
 
         <div className="sidebar-footer">
@@ -1014,7 +1009,9 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                 <ExamEditor
                   examId={editingExamId || undefined}
                   auth={props.auth}
-                  onBack={() => navigate('/admin/exams')}
+                  onBack={() => {
+                    navigate('/admin/exams');
+                  }}
                   onSave={saveExam}
                 />
               ) : (
@@ -1072,15 +1069,6 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                                 </svg>
                                 <span>{exam.timeLimitMinutes} minutes</span>
                               </div>
-                              {exam.questions && exam.questions.length > 0 && (
-                                <div className="exam-detail-item">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                                    <polyline points="14 2 14 8 20 8"/>
-                                  </svg>
-                                  <span>{exam.questions.length} question{exam.questions.length === 1 ? '' : 's'}</span>
-                                </div>
-                              )}
                               {exam.classroomIds && exam.classroomIds.length > 0 && (
                                 <div className="exam-detail-item">
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
