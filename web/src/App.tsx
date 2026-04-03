@@ -42,6 +42,14 @@ export function App(): JSX.Element {
     <Routes>
       <Route path="/login" element={<LoginPage auth={auth} authActions={authActions} />} />
       <Route
+        path="/admin"
+        element={
+          <ProtectedRoute auth={auth} role="admin">
+            <AdminPage auth={auth} onLogout={authActions.logout} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/*"
         element={
           <ProtectedRoute auth={auth} role="admin">
@@ -57,7 +65,7 @@ export function App(): JSX.Element {
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<Navigate to={auth ? (auth.user.role === "admin" ? "/admin" : "/student") : "/login"} replace />} />
+      <Route path="/" element={<Navigate to={auth ? (auth.user.role === "admin" ? "/admin" : "/student") : "/login"} replace />} />
     </Routes>
   );
 }
