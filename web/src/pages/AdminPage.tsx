@@ -67,6 +67,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   // Derive active view and exam editor state from URL
   const getActiveView = (): "overview" | "users" | "classrooms" | "students" | "exams" | "recycleBin" => {
     const path = location.pathname;
+    console.log('AdminPage - Current path:', path); // Debug log
     if (path.includes('/users')) return 'users';
     if (path.includes('/classrooms')) return 'classrooms';
     if (path.includes('/students')) return 'students';
@@ -75,6 +76,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     return 'overview';
   };
   const activeView = getActiveView();
+  console.log('AdminPage - Active view:', activeView); // Debug log
   
   // Check if we're in exam editor mode
   const isEditingExam = location.pathname.includes('/exams/edit/');
