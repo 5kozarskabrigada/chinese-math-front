@@ -566,30 +566,45 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           <Link 
             to="/admin"
             className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`}
+            onClick={(e) => {
+              console.log('Link clicked: Overview', e);
+            }}
           >
             Overview
           </Link>
           <Link 
             to="/admin/users"
             className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`}
+            onClick={(e) => {
+              console.log('Link clicked: Users', e);
+            }}
           >
             User Management
           </Link>
           <Link 
             to="/admin/classrooms"
             className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`}
+            onClick={(e) => {
+              console.log('Link clicked: Classrooms', e);
+            }}
           >
             Classrooms
           </Link>
           <Link 
             to="/admin/students"
             className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`}
+            onClick={(e) => {
+              console.log('Link clicked: Students', e);
+            }}
           >
             Students
           </Link>
           <Link 
             to="/admin/exams"
             className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`}
+            onClick={(e) => {
+              console.log('Link clicked: Exams', e);
+            }}
           >
             Exams
           </Link>
