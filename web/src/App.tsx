@@ -42,13 +42,22 @@ export function App(): JSX.Element {
     <Routes>
       <Route path="/login" element={<LoginPage auth={auth} authActions={authActions} />} />
       <Route
-        path="/admin/*"
+        path="/admin"
         element={
           <ProtectedRoute auth={auth} role="admin">
             <AdminPage auth={auth} onLogout={authActions.logout} />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={null} />
+        <Route path="users" element={null} />
+        <Route path="classrooms" element={null} />
+        <Route path="students" element={null} />
+        <Route path="exams" element={null} />
+        <Route path="exams/create" element={null} />
+        <Route path="exams/edit/:id" element={null} />
+        <Route path="recycle-bin" element={null} />
+      </Route>
       <Route
         path="/student"
         element={

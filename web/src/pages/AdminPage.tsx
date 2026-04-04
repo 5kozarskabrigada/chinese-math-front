@@ -64,30 +64,28 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Add debugging for location changes
-  useEffect(() => {
-    console.log('AdminPage mounted/updated. Location:', location.pathname);
-    console.log('Window location:', window.location.pathname);
-  }, [location.pathname]);
-  
   // Derive active view and exam editor state from URL
   const getActiveView = (): "overview" | "users" | "classrooms" | "students" | "exams" | "recycleBin" => {
     const path = location.pathname;
-    console.log('AdminPage - Current path:', path); // Debug log
-    if (path.includes('/users')) return 'users';
-    if (path.includes('/classrooms')) return 'classrooms';
-    if (path.includes('/students')) return 'students';
-    if (path.includes('/exams')) return 'exams';
-    if (path.includes('/recycle-bin')) return 'recycleBin';
-    // Handle /admin and /admin/ as overview
+    
+    // Exact match for /admin root
+    if (path === '/admin' || path === '/admin/') return 'overview';
+    
+    // Check sub-paths
+    if (path.startsWith('/admin/users')) return 'users';
+    if (path.startsWith('/admin/classrooms')) return 'classrooms';
+    if (path.startsWith('/admin/students')) return 'students';
+    if (path.startsWith('/admin/exams')) return 'exams';
+    if (path.startsWith('/admin/recycle-bin')) return 'recycleBin';
+    
+    // Default to overview
     return 'overview';
   };
   const activeView = getActiveView();
-  console.log('AdminPage - Active view:', activeView); // Debug log
   
   // Check if we're in exam editor mode
-  const isEditingExam = location.pathname.includes('/exams/edit/');
-  const isCreatingExam = location.pathname.endsWith('/exams/create');
+  const isEditingExam = location.pathname.startsWith('/admin/exams/edit/');
+  const isCreatingExam = location.pathname === '/admin/exams/create';
   const editingExamId = isEditingExam ? location.pathname.split('/').pop() : null;
   
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -572,50 +570,35 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           <button
             type="button"
             className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`}
-            onClick={() => {
-              console.log('Navigating to: /admin');
-              navigate("/admin");
-            }}
+            onClick={() => navigate("/admin")}
           >
             Overview
           </button>
           <button
             type="button"
             className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`}
-            onClick={() => {
-              console.log('Navigating to: /admin/users');
-              navigate("/admin/users");
-            }}
+            onClick={() => navigate("/admin/users")}
           >
             User Management
           </button>
           <button
             type="button"
             className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`}
-            onClick={() => {
-              console.log('Navigating to: /admin/classrooms');
-              navigate("/admin/classrooms");
-            }}
+            onClick={() => navigate("/admin/classrooms")}
           >
             Classrooms
           </button>
           <button
             type="button"
             className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`}
-            onClick={() => {
-              console.log('Navigating to: /admin/students');
-              navigate("/admin/students");
-            }}
+            onClick={() => navigate("/admin/students")}
           >
             Students
           </button>
           <button
             type="button"
             className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`}
-            onClick={() => {
-              console.log('Navigating to: /admin/exams');
-              navigate("/admin/exams");
-            }}
+            onClick={() => navigate("/admin/exams")}
           >
             Exams
           </button>
@@ -625,10 +608,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           <button
             type="button"
             className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`}
-            onClick={() => {
-              console.log('Navigating to: /admin/recycle-bin');
-              navigate("/admin/recycle-bin");
-            }}
+            onClick={() => navigate("/admin/recycle-bin")}
           >
             Recycle Bin
           </button>
