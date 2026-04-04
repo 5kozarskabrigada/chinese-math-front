@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useLocation, NavLink } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 import { connectSocket } from "../lib/socket";
@@ -563,46 +563,45 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           </div>
         
         <nav className="sidebar-nav">
-          <NavLink 
+          <Link 
             to="/admin"
-            end
-            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
+            className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`}
           >
             Overview
-          </NavLink>
-          <NavLink 
+          </Link>
+          <Link 
             to="/admin/users"
-            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
+            className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`}
           >
             User Management
-          </NavLink>
-          <NavLink 
+          </Link>
+          <Link 
             to="/admin/classrooms"
-            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
+            className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`}
           >
             Classrooms
-          </NavLink>
-          <NavLink 
+          </Link>
+          <Link 
             to="/admin/students"
-            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
+            className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`}
           >
             Students
-          </NavLink>
-          <NavLink 
+          </Link>
+          <Link 
             to="/admin/exams"
-            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
+            className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`}
           >
             Exams
-          </NavLink>
+          </Link>
           <button type="button" className="nav-item" disabled>Live Monitoring</button>
           <button type="button" className="nav-item" disabled>Activity Logs</button>
           <button type="button" className="nav-item" disabled>Results</button>
-          <NavLink 
+          <Link 
             to="/admin/recycle-bin"
-            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
+            className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`}
           >
             Recycle Bin
-          </NavLink>
+          </Link>
           <button type="button" className="nav-item" disabled>Settings</button>
         </nav>
 
