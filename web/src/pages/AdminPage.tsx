@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Activity, BarChart2, BookOpen, FileText, GraduationCap, LogOut, Settings, Trash2, Users } from "lucide-react";
+import { BookOpen, LogOut } from "lucide-react";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 import { connectSocket } from "../lib/socket";
@@ -61,6 +61,42 @@ type Exam = {
   classroomIds?: string[];
 };
 
+const adminNavigationSections: Array<{
+  title: string;
+  items: Array<{
+    label: string;
+    path?: string;
+    view?: "overview" | "users" | "classrooms" | "students" | "exams" | "recycleBin";
+    disabled?: boolean;
+  }>;
+}> = [
+  {
+    title: "Workspace",
+    items: [
+      { label: "Overview", path: "/admin", view: "overview" },
+      { label: "User Management", path: "/admin/users", view: "users" },
+      { label: "Classrooms", path: "/admin/classrooms", view: "classrooms" },
+      { label: "Students", path: "/admin/students", view: "students" }
+    ]
+  },
+  {
+    title: "Assessment",
+    items: [
+      { label: "Exams", path: "/admin/exams", view: "exams" },
+      { label: "Live Monitoring", disabled: true },
+      { label: "Results", disabled: true }
+    ]
+  },
+  {
+    title: "System",
+    items: [
+      { label: "Recycle Bin", path: "/admin/recycle-bin", view: "recycleBin" },
+      { label: "Settings", disabled: true },
+      { label: "Activity Logs", disabled: true }
+    ]
+  }
+];
+
 export function AdminPage(props: { auth: AuthState | null; onLogout: () => void }): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
@@ -98,6 +134,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [lastEvent, setLastEvent] = useState<string>("No realtime events yet.");
   const [error, setError] = useState<string | null>(null);
+  const [studentSearch, setStudentSearch] = useState("");
   
   // User creation form state
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -549,6 +586,32 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     }
   }
 
+  function getStudentClassroomName(studentId: string): string {
+    const user = users.find((item) => item.id === studentId);
+    const classroom = classrooms.find((item) => item.id === user?.classroomId);
+    return classroom?.name ?? "Unassigned";
+  }
+
+  const normalizedStudentSearch = studentSearch.trim().toLowerCase();
+  const filteredStudents = students.filter((student) => {
+    if (!normalizedStudentSearch) {
+      return true;
+    }
+
+    const classroomName = getStudentClassroomName(student.id).toLowerCase();
+    return [student.name, student.id, student.status, classroomName].some((value) =>
+      value.toLowerCase().includes(normalizedStudentSearch)
+    );
+  });
+
+  const activeStudentCount = students.filter((student) => student.status.toLowerCase() === "active").length;
+  const verifiedStudentCount = students.filter((student) => student.cameraVerified).length;
+  const readyStudentCount = students.filter((student) => student.cameraVerified && student.phoneLinked).length;
+  const attentionStudentCount = students.filter((student) => {
+    const status = student.status.toLowerCase();
+    return status === "flagged" || status === "terminated";
+  }).length;
+
 
   return (
     <div className="admin-dashboard">
@@ -566,58 +629,36 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           </div>
         
         <nav className="sidebar-nav">
-          <button
-            type="button"
-            className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`}
-            onClick={() => navigate("/admin")}
-          >
-            <BarChart2 size={18} />
-            Overview
-          </button>
-          <button
-            type="button"
-            className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`}
-            onClick={() => navigate("/admin/users")}
-          >
-            <Users size={18} />
-            User Management
-          </button>
-          <button
-            type="button"
-            className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`}
-            onClick={() => navigate("/admin/classrooms")}
-          >
-            <GraduationCap size={18} />
-            Classrooms
-          </button>
-          <button
-            type="button"
-            className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`}
-            onClick={() => navigate("/admin/students")}
-          >
-            <Users size={18} />
-            Students
-          </button>
-          <button
-            type="button"
-            className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`}
-            onClick={() => navigate("/admin/exams")}
-          >
-            <BookOpen size={18} />
-            Exams
-          </button>
-          <button type="button" className="nav-item" disabled><Activity size={18} />Live Monitoring</button>
-          <button type="button" className="nav-item" disabled><FileText size={18} />Activity Logs</button>
-          <button type="button" className="nav-item" disabled><FileText size={18} />Results</button>
-          <button
-            type="button"
-            className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`}
-            onClick={() => navigate("/admin/recycle-bin")}
-          >
-            <Trash2 size={18} />
-            Recycle Bin
-          </button>
-          <button type="button" className="nav-item" disabled><Settings size={18} />Settings</button>
+          {adminNavigationSections.map((section) => (
+            <div key={section.title} className="sidebar-nav-panel">
+              <p className="sidebar-nav-label">{section.title}</p>
+              <div className="sidebar-nav-list">
+                {section.items.map((item) => {
+                  const isActive = item.view === activeView;
+
+                  if (item.disabled) {
+                    return (
+                      <div key={item.label} className="nav-item nav-item-disabled" aria-disabled="true">
+                        <span className="nav-item-text">{item.label}</span>
+                        <span className="nav-item-note">Soon</span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      className={`nav-item ${isActive ? "nav-item-active" : ""}`}
+                      onClick={() => navigate(item.path || "/admin")}
+                    >
+                      <span className="nav-item-text">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <div className="sidebar-footer">
@@ -850,9 +891,11 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                         </div>
                       )}
                     </div>
-                    <button onClick={createUser} className="create-user-button">
-                      Create User
-                    </button>
+                    <div className="creation-form-actions">
+                      <button onClick={createUser} className="create-user-button">
+                        Create User
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -956,12 +999,12 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                             className="form-input"
                           />
                         </div>
-                        <div style={{ display: "flex", gap: "12px" }}>
+                        <div className="creation-form-actions">
                           <button onClick={createOrUpdateClassroom} className="create-user-button">
                             {editingClassroom ? "Update Classroom" : "Create Classroom"}
                           </button>
                           {editingClassroom && (
-                            <button onClick={cancelClassroomForm} className="cancel-button-modal" style={{ padding: "12px 24px" }}>
+                            <button onClick={cancelClassroomForm} className="cancel-button-modal creation-form-cancel">
                               Cancel
                             </button>
                           )}
@@ -1188,11 +1231,34 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
               <div className="page-header">
                 <div>
                   <h1 className="page-title">Student Management</h1>
-                  <p className="page-subtitle">View and manage all students</p>
+                  <p className="page-subtitle">Track readiness, roster coverage, and session status from one view</p>
                 </div>
               </div>
 
               <div className="content-area">
+                <div className="student-summary-grid">
+                  <div className="student-summary-card">
+                    <p className="student-summary-label">Total roster</p>
+                    <p className="student-summary-value">{students.length}</p>
+                    <p className="student-summary-note">Students currently available in the system</p>
+                  </div>
+                  <div className="student-summary-card">
+                    <p className="student-summary-label">Active now</p>
+                    <p className="student-summary-value">{activeStudentCount}</p>
+                    <p className="student-summary-note">Live student sessions currently marked active</p>
+                  </div>
+                  <div className="student-summary-card">
+                    <p className="student-summary-label">Camera verified</p>
+                    <p className="student-summary-value">{verifiedStudentCount}</p>
+                    <p className="student-summary-note">Students who completed camera verification</p>
+                  </div>
+                  <div className="student-summary-card student-summary-card-alert">
+                    <p className="student-summary-label">Needs attention</p>
+                    <p className="student-summary-value">{attentionStudentCount}</p>
+                    <p className="student-summary-note">Flagged or terminated sessions that need review</p>
+                  </div>
+                </div>
+
                 {students.length === 0 ? (
                   <div className="empty-state">
                     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1204,48 +1270,91 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                     <p>Students will appear here once they are created</p>
                   </div>
                 ) : (
-                  <div className="table-container">
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Name</th>
-                          <th>Classroom</th>
-                          <th>Status</th>
-                          <th>Camera Verified</th>
-                          <th>Phone Linked</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {students.map((student) => {
-                          const classroom = classrooms.find(c => c.id === student.id.split('-')[0]);
-                          return (
-                            <tr key={student.id}>
-                              <td className="name-cell">{student.name}</td>
-                              <td>{classroom?.name || 'N/A'}</td>
-                              <td>
-                                <span className={`status-badge status-${student.status.toLowerCase()}`}>
-                                  {student.status}
-                                </span>
-                              </td>
-                              <td>
-                                {student.cameraVerified ? (
-                                  <span className="badge-success">✓ Verified</span>
-                                ) : (
-                                  <span className="badge-warning">Not Verified</span>
-                                )}
-                              </td>
-                              <td>
-                                {student.phoneLinked ? (
-                                  <span className="badge-success">✓ Linked</span>
-                                ) : (
-                                  <span className="badge-warning">Not Linked</span>
-                                )}
-                              </td>
+                  <div className="monitoring-section student-management-shell">
+                    <div className="student-management-toolbar">
+                      <div>
+                        <h2 className="section-title student-management-title">Roster overview</h2>
+                        <p className="student-management-copy">
+                          {filteredStudents.length} of {students.length} students shown. {readyStudentCount} are fully ready for monitored exams.
+                        </p>
+                      </div>
+                      <label className="student-search-panel">
+                        <span className="student-search-label">Search roster</span>
+                        <input
+                          type="text"
+                          value={studentSearch}
+                          onChange={(event) => setStudentSearch(event.target.value)}
+                          placeholder="Search by student, id, classroom, or status"
+                          className="search-input-inline"
+                        />
+                      </label>
+                    </div>
+
+                    {filteredStudents.length === 0 ? (
+                      <div className="empty-state student-empty-state">
+                        <h3>No students match this search</h3>
+                        <p>Try a different student name, classroom, or status keyword.</p>
+                      </div>
+                    ) : (
+                      <div className="table-container student-table-wrap">
+                        <table className="data-table student-data-table">
+                          <thead>
+                            <tr>
+                              <th>Student</th>
+                              <th>Classroom</th>
+                              <th>Status</th>
+                              <th>Camera</th>
+                              <th>Phone</th>
+                              <th>Readiness</th>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                          </thead>
+                          <tbody>
+                            {filteredStudents.map((student) => {
+                              const classroomName = getStudentClassroomName(student.id);
+                              const isReady = student.cameraVerified && student.phoneLinked;
+
+                              return (
+                                <tr key={student.id}>
+                                  <td>
+                                    <div className="student-table-name-block">
+                                      <span className="student-table-name">{student.name}</span>
+                                      <span className="student-table-meta">{student.id}</span>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <span className="student-classroom-pill">{classroomName}</span>
+                                  </td>
+                                  <td>
+                                    <span className={`status-badge status-${student.status.toLowerCase()}`}>
+                                      {student.status}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    {student.cameraVerified ? (
+                                      <span className="badge-success">Verified</span>
+                                    ) : (
+                                      <span className="badge-warning">Missing</span>
+                                    )}
+                                  </td>
+                                  <td>
+                                    {student.phoneLinked ? (
+                                      <span className="badge-success">Linked</span>
+                                    ) : (
+                                      <span className="badge-warning">Missing</span>
+                                    )}
+                                  </td>
+                                  <td>
+                                    <span className={`student-readiness-pill ${isReady ? "student-readiness-pill-ready" : "student-readiness-pill-pending"}`}>
+                                      {isReady ? "Ready" : "Check setup"}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

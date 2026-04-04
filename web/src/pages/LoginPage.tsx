@@ -42,12 +42,15 @@ export function LoginPage(props: {
       <div className="login-orb login-orb-left" />
       <div className="login-orb login-orb-right" />
       <section className="panel login-panel">
-        <div className="login-brand-mark">
-          <BookOpen size={28} />
-        </div>
-        <div className="login-panel-header">
-          <h1>Welcome Back</h1>
-          <p className="muted">Sign in to manage classrooms, publish exams, and monitor student sessions.</p>
+        <div className="login-brand-row">
+          <div className="login-brand-mark">
+            <BookOpen size={28} />
+          </div>
+          <div className="login-brand-copy">
+            <p className="login-eyebrow">Chinese Math Platform</p>
+            <h1>Sign in to the exam portal</h1>
+            <p className="muted">Manage classrooms, prepare exam sessions, and monitor students from a single workspace.</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="stack">
@@ -106,14 +109,19 @@ export function LoginPage(props: {
         <div className="login-footer-note">
           <div className="login-note-row">
             <ShieldCheck size={16} />
-            <span>Use your administrator credentials to access the control panel.</span>
+            <span>Use your administrator or student credentials to access the secured portal.</span>
           </div>
         </div>
 
-        <div className="hint login-demo-hint">
-          <strong>Demo Accounts</strong><br />
-          Admin: admin-1 / admin123<br />
-          Student: stu-1001 / student123
+        <div className="login-demo-grid">
+          <div className="hint login-demo-card">
+            <strong>Admin Demo</strong>
+            <span>admin-1 / admin123</span>
+          </div>
+          <div className="hint login-demo-card">
+            <strong>Student Demo</strong>
+            <span>stu-1001 / student123</span>
+          </div>
         </div>
       </section>
     </main>
