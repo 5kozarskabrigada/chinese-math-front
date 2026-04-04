@@ -1095,29 +1095,54 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                             onClick={() => navigate(`/admin/exams/edit/${exam.id}`)}
                           >
                             <div className="exam-card-header">
-                              <div>
+                              <div className="exam-card-heading">
+                                <p className="exam-card-kicker">Mathematics Exam</p>
                                 <h3 className="exam-card-title">{exam.title}</h3>
-                                <p className="exam-card-code">Code: {exam.code}</p>
                               </div>
                               <div className={`exam-status ${exam.isActive ? 'status-active' : 'status-inactive'}`}>
-                                {exam.isActive ? '● Active' : '○ Inactive'}
+                                {exam.isActive ? 'Active' : 'Draft'}
                               </div>
                             </div>
+
+                            <div className={`exam-code-panel ${exam.isActive ? 'exam-code-panel-active' : ''}`}>
+                              <span className="exam-code-label">Access Code</span>
+                              <span className="exam-card-code">{exam.code}</span>
+                            </div>
+
+                            <p className="exam-card-summary">
+                              Structured mathematics assessment with timed delivery and classroom assignment controls.
+                            </p>
                             
                             <div className="exam-card-details">
-                              <div className="exam-detail-item">
+                              <div className="exam-detail-item exam-metric-pill">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <circle cx="12" cy="12" r="10"/>
                                   <polyline points="12 6 12 12 16 14"/>
                                 </svg>
-                                <span>{exam.timeLimitMinutes} minutes</span>
+                                <span>{exam.timeLimitMinutes} min</span>
                               </div>
-                              {exam.classroomIds && exam.classroomIds.length > 0 && (
-                                <div className="exam-detail-item">
+                              <div className="exam-detail-item exam-metric-pill">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 016.5 22H20M20 17V22M20 17l-7-7M20 17H10a2 2 0 01-2-2V5"/>
+                                </svg>
+                                <span>Math Set</span>
+                              </div>
+                              {exam.classroomIds && exam.classroomIds.length > 0 ? (
+                                <div className="exam-detail-item exam-metric-pill">
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
                                   </svg>
-                                  <span>{exam.classroomIds.length} classroom(s)</span>
+                                  <span>{exam.classroomIds.length} classroom{exam.classroomIds.length === 1 ? '' : 's'}</span>
+                                </div>
+                              ) : (
+                                <div className="exam-detail-item exam-metric-pill exam-metric-pill-muted">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 20h9"/>
+                                    <path d="M12 4h9"/>
+                                    <path d="M4 9h16"/>
+                                    <path d="M4 15h16"/>
+                                  </svg>
+                                  <span>Unassigned</span>
                                 </div>
                               )}
                             </div>
