@@ -64,6 +64,12 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
   const navigate = useNavigate();
   const location = useLocation();
   
+  // Add debugging for location changes
+  useEffect(() => {
+    console.log('AdminPage mounted/updated. Location:', location.pathname);
+    console.log('Window location:', window.location.pathname);
+  }, [location.pathname]);
+  
   // Derive active view and exam editor state from URL
   const getActiveView = (): "overview" | "users" | "classrooms" | "students" | "exams" | "recycleBin" => {
     const path = location.pathname;

@@ -58,7 +58,6 @@ export function App(): JSX.Element {
         }
       />
       <Route path="/" element={<Navigate to={auth ? (auth.user.role === "admin" ? "/admin" : "/student") : "/login"} replace />} />
-      <Route path="*" element={<Navigate to={auth ? (auth.user.role === "admin" ? "/admin" : "/student") : "/login"} replace />} />
     </Routes>
   );
 }
