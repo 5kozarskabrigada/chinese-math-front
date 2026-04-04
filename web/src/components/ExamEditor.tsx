@@ -1,14 +1,14 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import type { AuthState } from "../lib/auth";
-import { apiRequest } from "../lib/api";
-import katex from "katex";
 
 type Question = {
   id: string;
+  type: "multiple-choice" | "fill-blank" | "short-answer" | "multi-part";
   content: string;
-  options: string[];
-  correctAnswer: number; // Index of correct option (0-3)
+  options?: string[];
+  correctAnswer: string | string[];
   points: number;
+  explanation?: string;
 };
 
 type ExamData = {
@@ -28,225 +28,10 @@ type ExamEditorProps = {
   onSave: (exam: ExamData) => void;
 };
 
-// Math toolbar component with LaTeX support
-function MathToolbar({ onInsert }: { onInsert: (text: string) => void }) {
-  const latexCommands = [
-    { label: "√ Square Root", value: "\\sqrt{}" },
-    { label: "ⁿ√ nth Root", value: "\\sqrt[n]{}" },
-    { label: "÷ Fraction", value: "\\frac{}{}" },
-    { label: "x² Power", value: "^{}" },
-    { label: "xₙ Subscript", value: "_{}" },
-    { label: "∑ Sum", value: "\\sum_{i=1}^{n}" },
-    { label: "∫ Integral", value: "\\int_{a}^{b}" },
-    { label: "√ Root", value: "\\sqrt{}" },
-    { label: "π Pi", value: "\\pi" },
-    { label: "∞ Infinity", value: "\\infty" },
-    { label: "≤ Less/Equal", value: "\\leq" },
-    { label: "≥ Greater/Equal", value: "\\geq" },
-    { label: "≠ Not Equal", value: "\\neq" },
-    { label: "± Plus/Minus", value: "\\pm" },
-    { label: "× Times", value: "\\times" },
-    { label: "÷ Divide", value: "\\div" },
-    { label: "° Degree", value: "^\\circ" },
-    { label: "α Alpha", value: "\\alpha" },
-    { label: "β Beta", value: "\\beta" },
-    { label: "θ Theta", value: "\\theta" },
-  ];
-
-  return (
-    <div style={{
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '4px',
-      padding: '8px',
-      background: '#f0f9ff',
-      borderRadius: '6px',
-      marginBottom: '8px',
-      border: '1px solid #bae6fd'
-    }}>
-      <div style={{
-        width: '100%',
-        fontSize: '11px',
-        fontWeight: 700,
-        color: '#0369a1',
-        marginBottom: '4px',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px'
-      }}>
-        LaTeX Math Toolbar - Click to insert
-      </div>
-      {latexCommands.map((cmd, idx) => (
-        <button
-          key={idx}
-          onClick={() => onInsert(cmd.value)}
-          type="button"
-          title={`Insert: ${cmd.value}`}
-          style={{
-            padding: '5px 8px',
-            background: 'white',
-            border: '1px solid #93c5fd',
-            borderRadius: '4px',
-            fontSize: '11px',
-            fontWeight: 600,
-            color: '#1e40af',
-            cursor: 'pointer',
-            transition: 'all 0.15s',
-            whiteSpace: 'nowrap'
-          }}
-          onMouseOver={e => {
-            e.currentTarget.style.background = '#3b82f6';
-            e.currentTarget.style.color = 'white';
-            e.currentTarget.style.borderColor = '#3b82f6';
-          }}
-          onMouseOut={e => {
-            e.currentTarget.style.background = 'white';
-            e.currentTarget.style.color = '#1e40af';
-            e.currentTarget.style.borderColor = '#93c5fd';
-          }}
-        >
-          {cmd.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// Inline LaTeX Editor - Shows rendered math as you type
-function InlineLatexEditor({ 
-  value, 
-  onChange, 
-  onFocus, 
-  onBlur, 
-  placeholder,
-  isActive 
-}: { 
-  value: string;
-  onChange: (value: string) => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  placeholder?: string;
-  isActive?: boolean;
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-
-  const renderLatex = (text: string): string => {
-    if (!text) return '';
-    
-    try {
-      // Check if text contains LaTeX commands
-      const hasLatex = /\\[a-zA-Z]+|\{|\}|\^|_/.test(text);
-      
-      if (hasLatex) {
-        // Render as LaTeX
-        return katex.renderToString(text, {
-          throwOnError: false,
-          displayMode: false,
-          output: 'html',
-          trust: true
-        });
-      } else {
-        // Return plain text wrapped in span
-        return `<span>${text || ''}</span>`;
-      }
-    } catch (err) {
-      // On error, show the raw text
-      return `<span style="color: #991b1b; font-family: monospace;">${text}</span>`;
-    }
-  };
-
-  const handleEditClick = () => {
-    setIsEditing(true);
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(value.length, value.length);
-      }
-    }, 0);
-  };
-
-  const handleBlur = () => {
-    setTimeout(() => {
-      setIsEditing(false);
-      onBlur?.();
-    }, 200);
-  };
-
-  const handleFocus = () => {
-    setIsEditing(true);
-    onFocus?.();
-  };
-
-  useEffect(() => {
-    if (isActive && !isEditing) {
-      setIsEditing(true);
-      setTimeout(() => textareaRef.current?.focus(), 0);
-    }
-  }, [isActive]);
-
-  return (
-    <div style={{
-      position: 'relative',
-      width: '100%',
-      minHeight: '80px'
-    }}>
-      {isEditing ? (
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          placeholder={placeholder}
-          style={{
-            width: '100%',
-            padding: '10px',
-            border: '2px solid #6366f1',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontFamily: 'monospace',
-            resize: 'vertical',
-            minHeight: '80px',
-            lineHeight: '1.6',
-            outline: 'none',
-            background: '#fafbff',
-            color: '#1f2937'
-          }}
-        />
-      ) : (
-        <div
-          onClick={handleEditClick}
-          style={{
-            width: '100%',
-            padding: '10px',
-            border: '2px solid #e5e7eb',
-            borderRadius: '8px',
-            fontSize: '15px',
-            minHeight: '80px',
-            lineHeight: '1.6',
-            cursor: 'text',
-            background: 'white',
-            transition: 'all 0.2s',
-            color: value ? '#1f2937' : '#9ca3af'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.borderColor = '#6366f1'}
-          onMouseOut={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-        >
-          {value ? (
-            <div dangerouslySetInnerHTML={{ __html: renderLatex(value) }} />
-          ) : (
-            <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>{placeholder || 'Click to edit...'}</span>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function ExamEditor(props: ExamEditorProps): JSX.Element {
   const [exam, setExam] = useState<ExamData>({
     title: "Untitled Exam",
-    code: "",
+    code: generateExamCode(),
     isActive: false,
     timeLimitMinutes: 60,
     classroomIds: [],
@@ -255,54 +40,19 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
 
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
-  const [previewQuestionIndex, setPreviewQuestionIndex] = useState(0);
-  const [previewTimeLeft, setPreviewTimeLeft] = useState(0);
-  const [loading, setLoading] = useState(false);
-
-  // Load exam data when editing, or generate code for new exam
-  useEffect(() => {
-    async function loadExam() {
-      if (props.examId && props.auth) {
-        setLoading(true);
-        try {
-          const examData = await apiRequest<ExamData>({
-            path: `/admin/exams/${props.examId}`,
-            auth: props.auth
-          });
-          setExam(examData);
-        } catch (error) {
-          console.error('Failed to load exam:', error);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        // Generate code for new exam only once
-        setExam(prev => ({
-          ...prev,
-          code: prev.code || generateExamCode()
-        }));
-      }
-    }
-
-    loadExam();
-  }, [props.examId, props.auth]);
 
   function generateExamCode(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
+    return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
-  function addQuestion() {
+  function addQuestion(type: Question["type"]) {
     const newQuestion: Question = {
       id: `q-${Date.now()}`,
+      type,
       content: "",
-      options: ["", "", "", ""],
-      correctAnswer: 0,
-      points: 10
+      correctAnswer: type === "multiple-choice" ? "" : [],
+      points: 10,
+      ...(type === "multiple-choice" && { options: ["", "", "", ""] })
     };
 
     setExam(prev => ({
@@ -322,8 +72,6 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
   }
 
   function deleteQuestion(index: number) {
-    if (!confirm('Are you sure you want to delete this question?')) return;
-    
     setExam(prev => ({
       ...prev,
       questions: prev.questions.filter((_, i) => i !== index)
@@ -331,87 +79,247 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
     setSelectedQuestionIndex(null);
   }
 
-  function duplicateQuestion(index: number) {
-    const questionToCopy = exam.questions[index];
-    const newQuestion: Question = {
-      ...questionToCopy,
-      id: `q-${Date.now()}`,
-    };
+  function moveQuestion(index: number, direction: "up" | "down") {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === exam.questions.length - 1) return;
 
-    setExam(prev => ({
-      ...prev,
-      questions: [...prev.questions.slice(0, index + 1), newQuestion, ...prev.questions.slice(index + 1)]
-    }));
-  }
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    const newQuestions = [...exam.questions];
+    [newQuestions[index], newQuestions[newIndex]] = [newQuestions[newIndex], newQuestions[index]];
 
-  function startPreview() {
-    setPreviewMode(true);
-    setPreviewQuestionIndex(0);
-    setPreviewTimeLeft(exam.timeLimitMinutes * 60);
-  }
-
-  function regenerateCode() {
-    if (confirm('Generate a new exam code? This will replace the current code.')) {
-      setExam(prev => ({ ...prev, code: generateExamCode() }));
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-sm text-gray-600">Loading exam...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (previewMode) {
-    return <StudentPreview 
-      exam={exam} 
-      currentQuestionIndex={previewQuestionIndex}
-      onNavigate={setPreviewQuestionIndex}
-      timeLeft={previewTimeLeft}
-      onExit={() => setPreviewMode(false)}
-    />;
+    setExam(prev => ({ ...prev, questions: newQuestions }));
+    setSelectedQuestionIndex(newIndex);
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Modern Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={props.onBack}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <div className="exam-editor">
+      {/* Left Sidebar */}
+      <div className="exam-editor-sidebar">
+        <div className="exam-editor-sidebar-header">
+          <h2>Exam Editor</h2>
+          <span className={`exam-status-badge ${exam.isActive ? 'active' : 'inactive'}`}>
+            {exam.isActive ? 'Active' : 'Draft'}
+          </span>
+        </div>
+        
+        <nav className="exam-editor-nav">
+          <button className="nav-button active">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M9 21V9"/>
+            </svg>
+            <span>Overview</span>
+          </button>
+          
+          <div style={{ 
+            fontSize: '11px', 
+            fontWeight: 700, 
+            color: '#9ca3af', 
+            textTransform: 'uppercase', 
+            letterSpacing: '0.5px', 
+            padding: '16px 12px 8px',
+            marginTop: '8px'
+          }}>
+            Question Types
+          </div>
+          
+          <button 
+            onClick={() => addQuestion("multiple-choice")} 
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              textAlign: 'left',
+              marginBottom: '8px'
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = '#f0f9ff';
+              e.currentTarget.style.borderColor = '#6366f1';
+              e.currentTarget.style.color = '#6366f1';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#e5e7eb';
+              e.currentTarget.style.color = '#374151';
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9 12l2 2 4-4"/>
+            </svg>
+            <span>Multiple Choice</span>
+          </button>
+          
+          <button 
+            onClick={() => addQuestion("fill-blank")} 
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              textAlign: 'left',
+              marginBottom: '8px'
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = '#f0f9ff';
+              e.currentTarget.style.borderColor = '#6366f1';
+              e.currentTarget.style.color = '#6366f1';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#e5e7eb';
+              e.currentTarget.style.color = '#374151';
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="8" y1="12" x2="16" y2="12"/>
+              <line x1="8" y1="12" x2="8" y2="12.01"/>
+              <line x1="16" y1="12" x2="16" y2="12.01"/>
+            </svg>
+            <span>Fill in Blank</span>
+          </button>
+          
+          <button 
+            onClick={() => addQuestion("short-answer")} 
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              textAlign: 'left',
+              marginBottom: '8px'
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = '#f0f9ff';
+              e.currentTarget.style.borderColor = '#6366f1';
+              e.currentTarget.style.color = '#6366f1';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#e5e7eb';
+              e.currentTarget.style.color = '#374151';
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 20h9"/>
+              <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+            <span>Short Answer</span>
+          </button>
+          
+          <button 
+            onClick={() => addQuestion("multi-part")} 
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#374151',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              textAlign: 'left',
+              marginBottom: '8px'
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = '#f0f9ff';
+              e.currentTarget.style.borderColor = '#6366f1';
+              e.currentTarget.style.color = '#6366f1';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = '#e5e7eb';
+              e.currentTarget.style.color = '#374151';
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            <span>Multi-Part</span>
+          </button>
+        </nav>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="exam-editor-main">
+        {/* Top Bar */}
+        <div className="exam-editor-header">
+          <div className="exam-editor-top-bar">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+              <button onClick={props.onBack} className="back-button">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M19 12H5M12 19l-7-7 7-7"/>
                 </svg>
                 Back
               </button>
-              
-              <div className="h-8 w-px bg-gray-300"></div>
-              
-              <input
-                type="text"
-                value={exam.title}
-                onChange={(e) => setExam(prev => ({ ...prev, title: e.target.value }))}
-                className="text-xl font-bold text-gray-900 bg-transparent border-none outline-none focus:ring-0 min-w-[300px]"
-                placeholder="Exam Title"
-              />
+              <span className="exam-title-text">{exam.title || "Untitled Exam"}</span>
             </div>
-
-            <div className="flex items-center gap-3">
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <button 
-                onClick={startPreview}
-                disabled={exam.questions.length === 0}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-indigo-600 bg-white border border-indigo-600 rounded-lg hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                onClick={() => setPreviewMode(!previewMode)} 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 18px',
+                  background: 'white',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#374151',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.background = '#f9fafb';
+                  e.currentTarget.style.borderColor = '#9ca3af';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                }}
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
@@ -419,10 +327,34 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
               </button>
               
               <button 
-                onClick={() => props.onSave(exam)}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm hover:shadow-md transition-all duration-200"
+                onClick={() => props.onSave(exam)} 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  background: '#6366f1',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 1px 3px 0 rgba(99, 102, 241, 0.3)'
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.background = '#4f46e5';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(99, 102, 241, 0.3)';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.background = '#6366f1';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(99, 102, 241, 0.3)';
+                }}
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
                   <polyline points="17 21 17 13 7 13 7 21"/>
                   <polyline points="7 3 7 8 15 8"/>
@@ -431,288 +363,264 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Settings Bar */}
-        <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={exam.isActive}
-                  onChange={(e) => setExam(prev => ({ ...prev, isActive: e.target.checked }))}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-              <span className="text-xs font-semibold text-gray-700">
-                {exam.isActive ? 'Active' : 'Draft'}
-              </span>
-            </div>
-            
-            <div className="h-5 w-px bg-gray-300"></div>
-            
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg">
-                <svg className="w-3.5 h-3.5 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
-                <input
-                  type="number"
-                  value={exam.timeLimitMinutes}
-                  onChange={(e) => setExam(prev => ({ ...prev, timeLimitMinutes: parseInt(e.target.value) || 60 }))}
-                  className="w-12 text-sm font-semibold text-center bg-transparent border-none outline-none"
-                  min="1"
-                />
-                <span className="text-xs text-gray-500 font-medium">min</span>
-              </div>
-            </div>
-
-            <div className="h-5 w-px bg-gray-300"></div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg group cursor-pointer" onClick={regenerateCode} title="Click to regenerate code">
-                <span className="font-mono text-sm font-bold text-gray-700 tracking-wider">{exam.code}</span>
-                <svg className="w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-600 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="23 4 23 10 17 10"/>
-                  <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
-                </svg>
-              </div>
-            </div>
-
-            <div className="h-5 w-px bg-gray-300"></div>
-
-            <div className="text-xs text-gray-600 font-medium">
-              <span className="font-semibold text-gray-900">{exam.questions.length}</span> {exam.questions.length === 1 ? 'Question' : 'Questions'} • <span className="font-semibold text-gray-900">{exam.questions.reduce((sum, q) => sum + q.points, 0)}</span> Points
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-4xl mx-auto">
-          {exam.questions.length === 0 ? (
-            <div className="text-center py-20 px-8 bg-white rounded-2xl border-2 border-dashed border-gray-300">
-              <svg className="w-16 h-16 mx-auto mb-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                No questions yet
-              </h3>
-              <p className="text-sm text-gray-600 mb-6">
-                Get started by adding your first multiple choice question
-              </p>
-              <button
-                onClick={addQuestion}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Add Question
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {exam.questions.map((question, index) => (
-                <QuestionEditorCard
-                  key={question.id}
-                  question={question}
-                  index={index}
-                  isSelected={selectedQuestionIndex === index}
-                  onSelect={() => setSelectedQuestionIndex(index)}
-                  onChange={(updates) => updateQuestion(index, updates)}
-                  onDelete={() => deleteQuestion(index)}
-                  onDuplicate={() => duplicateQuestion(index)}
-                />
-              ))}
-              
-              <button
-                onClick={addQuestion}
-                className="flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Add Question
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Question Editor Card Component
-function QuestionEditorCard({ 
-  question, 
-  index, 
-  isSelected, 
-  onSelect, 
-  onChange, 
-  onDelete,
-  onDuplicate 
-}: { 
-  question: Question; 
-  index: number; 
-  isSelected: boolean;
-  onSelect: () => void;
-  onChange: (updates: Partial<Question>) => void;
-  onDelete: () => void;
-  onDuplicate: () => void;
-}) {
-  const [activeField, setActiveField] = useState<'question' | `option-${number}` | null>(null);
-
-  function insertMathSymbol(field: 'question' | `option-${number}`, symbol: string) {
-    if (field === 'question') {
-      onChange({ content: question.content + symbol });
-    } else {
-      const optionIndex = parseInt(field.split('-')[1]);
-      const newOptions = [...question.options];
-      newOptions[optionIndex] += symbol;
-      onChange({ options: newOptions });
-    }
-  }
-
-  return (
-    <div className={`bg-white rounded-xl transition-all duration-200 ${isSelected ? 'border-2 border-indigo-600 shadow-lg shadow-indigo-100' : 'border border-gray-200 shadow-sm'}`}>
-      {/* Header */}
-      <div 
-        onClick={onSelect}
-        className={`px-4 py-3 border-b border-gray-100 flex items-center justify-between cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50' : 'bg-transparent hover:bg-gray-50'}`}
-      >
-        <div className="flex items-center gap-3">
-          <span className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
-            Q{index + 1}
-          </span>
-          <span className="text-xs text-gray-600 font-medium">
-            Multiple Choice
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            value={question.points}
-            onChange={(e) => onChange({ points: parseInt(e.target.value) || 0 })}
-            onClick={(e) => e.stopPropagation()}
-            className="w-14 px-2 py-1.5 border border-gray-300 rounded-lg text-center text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            min="0"
-          />
-          <span className="text-xs text-gray-600 font-medium">pts</span>
           
-          <button
-            onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-            className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors ml-2"
-            title="Duplicate"
-          >
-            <svg className="w-3.5 h-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-            </svg>
-          </button>
-          
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="p-2 bg-white border border-red-300 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-            title="Delete"
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-4">
-        {/* Question Field */}
-        <div className="mb-4">
-          <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">
-            Question
-          </label>
-          
-          {activeField === 'question' && (
-            <MathToolbar onInsert={(symbol) => insertMathSymbol('question', symbol)} />
-          )}
-          
-          <InlineLatexEditor
-            value={question.content}
-            onChange={(value) => onChange({ content: value })}
-            onFocus={() => setActiveField('question')}
-            onBlur={() => setTimeout(() => setActiveField(null), 200)}
-            placeholder="Enter question with LaTeX math: e.g., Solve \\sqrt{x+1} = 5"
-            isActive={activeField === 'question'}
-          />
-        </div>
-
-        {/* Options */}
-        <div>
-          <label className="block text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">
-            Answer Options
-          </label>
-
-          <div className="flex flex-col gap-3">
-            {question.options.map((option, optionIndex) => (
-              <div key={optionIndex}>
-                {activeField === `option-${optionIndex}` && (
-                  <MathToolbar onInsert={(symbol) => insertMathSymbol(`option-${optionIndex}`, symbol)} />
-                )}
-                
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onChange({ correctAnswer: optionIndex });
-                  }}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
-                    question.correctAnswer === optionIndex 
-                      ? 'bg-emerald-50 border-2 border-emerald-500' 
-                      : 'bg-gray-50 border-2 border-gray-200 hover:border-indigo-500 hover:bg-indigo-50'
-                  }`}
-                >
-                  {/* Radio button */}
-                  <div className={`w-5 h-5 rounded-full flex-shrink-0 transition-all duration-200 ${
-                    question.correctAnswer === optionIndex 
-                      ? 'border-[5px] border-emerald-500 bg-white' 
-                      : 'border-2 border-gray-400 bg-white'
-                  }`} />
-
-                  {/* Option label */}
-                  <span className={`font-bold min-w-[24px] text-sm ${
-                    question.correctAnswer === optionIndex ? 'text-emerald-700' : 'text-gray-600'
-                  }`}>
-                    {String.fromCharCode(65 + optionIndex)}.
+          {/* Control Panel */}
+          <div style={{ padding: '0 24px 20px' }}>
+            <div style={{
+              padding: '20px',
+              borderRadius: '12px',
+              border: exam.isActive ? '2px solid #a7f3d0' : '2px solid #e5e7eb',
+              background: exam.isActive ? '#d1fae5' : 'white',
+              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={exam.isActive}
+                      onChange={(e) => setExam(prev => ({ ...prev, isActive: e.target.checked }))}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#374151' }}>
+                    {exam.isActive ? 'Active' : 'Inactive'}
                   </span>
-
-                  {/* Input */}
+                </div>
+                
+                <div style={{ width: '1px', height: '28px', background: '#d1d5db' }}></div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
                   <input
-                    type="text"
-                    value={option}
-                    onChange={(e) => {
-                      const newOptions = [...question.options];
-                      newOptions[optionIndex] = e.target.value;
-                      onChange({ options: newOptions });
+                    type="number"
+                    value={exam.timeLimitMinutes}
+                    onChange={(e) => setExam(prev => ({ ...prev, timeLimitMinutes: parseInt(e.target.value) || 60 }))}
+                    style={{
+                      width: '80px',
+                      padding: '8px 12px',
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '8px',
+                      textAlign: 'center',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      background: 'white'
                     }}
-                    onFocus={(e) => {
-                      e.stopPropagation();
-                      setActiveField(`option-${optionIndex}`);
-                    }}
-                    onBlur={() => setTimeout(() => setActiveField(null), 200)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex-1 px-3 py-1.5 border-none bg-transparent text-sm outline-none font-medium"
-                    placeholder={`Option ${String.fromCharCode(65 + optionIndex)}`}
+                    min="1"
                   />
+                  <span style={{ fontSize: '14px', color: '#6b7280', fontWeight: 500 }}>minutes</span>
+                </div>
+                
+                <div style={{ width: '1px', height: '28px', background: '#d1d5db' }}></div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <span style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+                    Code:
+                  </span>
+                  <span style={{
+                    fontFamily: 'monospace',
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    color: exam.isActive ? '#065f46' : '#374151',
+                    letterSpacing: '0.1em',
+                    background: exam.isActive ? '#ecfdf5' : '#f3f4f6',
+                    padding: '6px 12px',
+                    borderRadius: '6px'
+                  }}>
+                    {exam.code}
+                  </span>
                 </div>
               </div>
-            ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Workspace */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px', background: '#f3f4f6' }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            {!previewMode ? (
+              <>
+                {/* Questions Section */}
+                <div style={{
+                  background: 'white',
+                  borderRadius: '16px',
+                  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                  padding: '32px',
+                  marginBottom: '24px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '16px', borderBottom: '2px solid #f3f4f6' }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', margin: 0 }}>
+                      Questions ({exam.questions.length})
+                    </h3>
+                    <div style={{ 
+                      fontSize: '14px', 
+                      fontWeight: 600,
+                      color: '#6366f1',
+                      background: '#eef2ff',
+                      padding: '6px 12px',
+                      borderRadius: '8px'
+                    }}>
+                      Total: {exam.questions.reduce((sum, q) => sum + q.points, 0)} pts
+                    </div>
+                  </div>
+
+                  {exam.questions.length === 0 ? (
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '60px 20px',
+                      color: '#9ca3af',
+                      background: '#f9fafb',
+                      borderRadius: '12px',
+                      border: '2px dashed #e5e7eb'
+                    }}>
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ margin: '0 auto 12px', opacity: 0.4 }}>
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                      </svg>
+                      <p style={{ fontSize: '15px', margin: 0, fontWeight: 500 }}>No questions yet</p>
+                      <p style={{ fontSize: '13px', margin: '8px 0 0 0', color: '#d1d5db' }}>Use the sidebar to add questions</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {exam.questions.map((question, index) => (
+                        <div
+                          key={question.id}
+                          onClick={() => setSelectedQuestionIndex(selectedQuestionIndex === index ? null : index)}
+                          style={{
+                            padding: '20px',
+                            border: selectedQuestionIndex === index ? '2px solid #6366f1' : '1px solid #e5e7eb',
+                            borderRadius: '12px',
+                            background: selectedQuestionIndex === index ? '#f5f3ff' : 'white',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: selectedQuestionIndex === index ? '0 4px 6px -1px rgba(99, 102, 241, 0.1), 0 2px 4px -1px rgba(99, 102, 241, 0.06)' : '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                          }}
+                        >
+                          <div style={{ 
+                            fontWeight: 700, 
+                            fontSize: '14px', 
+                            color: selectedQuestionIndex === index ? '#4f46e5' : '#6b7280', 
+                            marginBottom: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}>
+                            <span style={{
+                              background: selectedQuestionIndex === index ? '#6366f1' : '#e5e7eb',
+                              color: selectedQuestionIndex === index ? 'white' : '#6b7280',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontSize: '13px',
+                              fontWeight: 700
+                            }}>
+                              Q{index + 1}
+                            </span>
+                            <span>{question.type.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                            <span style={{
+                              marginLeft: 'auto',
+                              background: selectedQuestionIndex === index ? '#eef2ff' : '#f3f4f6',
+                              color: selectedQuestionIndex === index ? '#6366f1' : '#6b7280',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                              fontWeight: 600
+                            }}>
+                              {question.points} pts
+                            </span>
+                          </div>
+                          
+                          <QuestionRenderer question={question} />
+
+                          {selectedQuestionIndex === index && (
+                            <div 
+                              style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e5e7eb' }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <QuestionEditor
+                                question={question}
+                                onChange={(updates: Partial<Question>) => updateQuestion(index, updates)}
+                              />
+                              
+                              <div style={{ display: 'flex', gap: '8px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); moveQuestion(index, "up"); }}
+                                  disabled={index === 0}
+                                  style={{
+                                    padding: '10px 16px',
+                                    border: '1px solid #e5e7eb',
+                                    background: 'white',
+                                    borderRadius: '8px',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    color: '#374151',
+                                    cursor: index === 0 ? 'not-allowed' : 'pointer',
+                                    opacity: index === 0 ? 0.5 : 1,
+                                    transition: 'all 0.2s'
+                                  }}
+                                  onMouseOver={e => !e.currentTarget.disabled && (e.currentTarget.style.background = '#f9fafb')}
+                                  onMouseOut={e => e.currentTarget.style.background = 'white'}
+                                >
+                                  ↑ Move Up
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); moveQuestion(index, "down"); }}
+                                  disabled={index === exam.questions.length - 1}
+                                  style={{
+                                    padding: '10px 16px',
+                                    border: '1px solid #e5e7eb',
+                                    background: 'white',
+                                    borderRadius: '8px',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    color: '#374151',
+                                    cursor: index === exam.questions.length - 1 ? 'not-allowed' : 'pointer',
+                                    opacity: index === exam.questions.length - 1 ? 0.5 : 1,
+                                    transition: 'all 0.2s'
+                                  }}
+                                  onMouseOver={e => !e.currentTarget.disabled && (e.currentTarget.style.background = '#f9fafb')}
+                                  onMouseOut={e => e.currentTarget.style.background = 'white'}
+                                >
+                                  ↓ Move Down
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); deleteQuestion(index); }}
+                                  style={{
+                                    marginLeft: 'auto',
+                                    padding: '10px 16px',
+                                    border: '1px solid #fca5a5',
+                                    background: 'white',
+                                    borderRadius: '8px',
+                                    fontSize: '13px',
+                                    fontWeight: 600,
+                                    color: '#dc2626',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                  }}
+                                  onMouseOver={e => e.currentTarget.style.background = '#fef2f2'}
+                                  onMouseOut={e => e.currentTarget.style.background = 'white'}
+                                >
+                                  🗑 Delete
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <ExamPreview exam={exam} onClose={() => setPreviewMode(false)} />
+            )}
           </div>
         </div>
       </div>
@@ -720,332 +628,324 @@ function QuestionEditorCard({
   );
 }
 
-
-// Student Preview Component
-// Render text with LaTeX support
-function RenderLatex({ text }: { text: string }) {
-  const [html, setHtml] = useState<string>("");
-
-  useEffect(() => {
-    if (!text) {
-      setHtml("");
-      return;
-    }
-
-    try {
-      // Try to render as LaTeX, fallback to plain text on error
-      const rendered = katex.renderToString(text, {
-        throwOnError: false,
-        displayMode: false,
-        output: 'html'
-      });
-      setHtml(rendered);
-    } catch (err) {
-      // If rendering fails, show plain text
-      setHtml(text);
-    }
-  }, [text]);
-
-  if (!html) return <span>{text || "(No text)"}</span>;
-
-  return <span dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
-function StudentPreview({ 
-  exam, 
-  currentQuestionIndex, 
-  onNavigate, 
-  timeLeft,
-  onExit 
-}: { 
-  exam: ExamData; 
-  currentQuestionIndex: number;
-  onNavigate: (index: number) => void;
-  timeLeft: number;
-  onExit: () => void;
-}) {
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
-  const currentQuestion = exam.questions[currentQuestionIndex];
-
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-
-  if (!currentQuestion) {
-    return <div>No questions available</div>;
-  }
-
+// Question Renderer Component
+function QuestionRenderer({ question }: { question: Question }): JSX.Element {
   return (
-    <div style={{ 
-      height: '100vh', 
-      display: 'flex', 
-      flexDirection: 'column',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-    }}>
-      {/* Top Bar with Timer */}
-      <div style={{
-        background: 'white',
-        padding: '12px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button
-            onClick={onExit}
-            style={{
-              padding: '6px 12px',
-              background: '#f3f4f6',
-              border: '1px solid #e5e7eb',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#374151',
-              cursor: 'pointer'
-            }}
-          >
-            Exit Preview
-          </button>
-          <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#111827', margin: 0 }}>
-            {exam.title}
-          </h2>
-        </div>
-
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          background: '#fef3c7',
-          padding: '8px 16px',
-          borderRadius: '8px',
-          border: '2px solid #fcd34d'
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <span style={{ 
-            fontSize: '16px', 
-            fontWeight: 700, 
-            color: '#92400e',
-            fontFamily: 'monospace'
-          }}>
-            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-          </span>
-        </div>
-      </div>
-
-      {/* Main Question Area */}
+    <div style={{ marginTop: '8px' }}>
       <div style={{ 
-        flex: 1, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        padding: '30px',
-        overflowY: 'auto'
+        fontSize: '15px', 
+        lineHeight: '1.6', 
+        color: '#111827', 
+        marginBottom: '16px',
+        fontWeight: 500 
       }}>
-        <div style={{
-          maxWidth: '650px',
-          width: '100%',
-          background: 'white',
-          borderRadius: '16px',
-          padding: '32px',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-        }}>
-          {/* Question Number */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '18px',
-            paddingBottom: '12px',
-            borderBottom: '2px solid #f3f4f6'
-          }}>
-            <span style={{ 
-              fontSize: '12px', 
-              fontWeight: 700, 
-              color: '#6b7280',
-              textTransform: 'uppercase',
-              letterSpacing: '1px'
-            }}>
-              Question {currentQuestionIndex + 1} of {exam.questions.length}
-            </span>
-            <span style={{
-              background: '#eef2ff',
-              color: '#6366f1',
-              padding: '5px 10px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 700
-            }}>
-              {currentQuestion.points} points
-            </span>
-          </div>
-
-          {/* Question Text */}
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: 600,
-            color: '#111827',
-            lineHeight: '1.6',
-            marginBottom: '24px',
-            textAlign: 'center'
-          }}>
-            <RenderLatex text={currentQuestion.content} />
-          </h3>
-
-          {/* Options */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {currentQuestion.options.map((option, optionIndex) => (
-              <div
-                key={optionIndex}
-                onClick={() => setSelectedAnswers(prev => ({ ...prev, [currentQuestionIndex]: optionIndex }))}
-                style={{
-                  padding: '14px 18px',
-                  background: selectedAnswers[currentQuestionIndex] === optionIndex ? '#ede9fe' : '#f9fafb',
-                  border: selectedAnswers[currentQuestionIndex] === optionIndex ? '2px solid #6366f1' : '2px solid #e5e7eb',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}
-                onMouseOver={e => {
-                  if (selectedAnswers[currentQuestionIndex] !== optionIndex) {
-                    e.currentTarget.style.background = '#f5f3ff';
-                    e.currentTarget.style.borderColor = '#a5b4fc';
-                  }
-                }}
-                onMouseOut={e => {
-                  if (selectedAnswers[currentQuestionIndex] !== optionIndex) {
-                    e.currentTarget.style.background = '#f9fafb';
-                    e.currentTarget.style.borderColor = '#e5e7eb';
-                  }
-                }}
-              >
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  border: selectedAnswers[currentQuestionIndex] === optionIndex ? '6px solid #6366f1' : '2px solid #d1d5db',
-                  background: 'white',
-                  flexShrink: 0,
-                  transition: 'all 0.2s'
-                }} />
-
-                <span style={{
-                  fontWeight: 700,
-                  color: selectedAnswers[currentQuestionIndex] === optionIndex ? '#6366f1' : '#6b7280',
-                  fontSize: '14px',
-                  minWidth: '28px'
-                }}>
-                  {String.fromCharCode(65 + optionIndex)}.
-                </span>
-
-                <span style={{
-                  flex: 1,
-                  fontSize: '14px',
-                  color: '#111827',
-                  fontWeight: 500
-                }}>
-                  <RenderLatex text={option} />
-                </span>
-
-                {selectedAnswers[currentQuestionIndex] === optionIndex && (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="3">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        {question.content || <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>(Empty question)</span>}
       </div>
-
-      {/* Bottom Navigation */}
-      <div style={{
-        background: 'white',
-        padding: '14px 24px',
-        borderTop: '1px solid #e5e7eb',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: '0 -2px 4px rgba(0, 0, 0, 0.1)'
-      }}>
-        <button
-          onClick={() => onNavigate(Math.max(0, currentQuestionIndex - 1))}
-          disabled={currentQuestionIndex === 0}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            background: currentQuestionIndex === 0 ? '#f3f4f6' : 'white',
-            border: '2px solid #e5e7eb',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: 600,
-            color: currentQuestionIndex === 0 ? '#9ca3af' : '#374151',
-            cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-          Previous
-        </button>
-
-        {/* Question indicators */}
-        <div style={{ display: 'flex', gap: '6px' }}>
-          {exam.questions.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => onNavigate(idx)}
+      
+      {question.type === "multiple-choice" && question.options && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {question.options.map((option, idx) => (
+            <div 
+              key={idx} 
               style={{
-                width: '30px',
-                height: '30px',
-                borderRadius: '6px',
-                border: idx === currentQuestionIndex ? '2px solid #6366f1' : '1px solid #e5e7eb',
-                background: selectedAnswers[idx] !== undefined 
-                  ? (idx === currentQuestionIndex ? '#6366f1' : '#eef2ff')
-                  : (idx === currentQuestionIndex ? '#6366f1' : 'white'),
-                color: idx === currentQuestionIndex ? 'white' : (selectedAnswers[idx] !== undefined ? '#6366f1' : '#6b7280'),
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                background: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
                 transition: 'all 0.2s'
               }}
             >
-              {idx + 1}
-            </button>
+              <span style={{ 
+                fontWeight: 700, 
+                color: '#6366f1',
+                minWidth: '28px',
+                height: '28px',
+                background: '#eef2ff',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '13px'
+              }}>
+                {String.fromCharCode(65 + idx)}
+              </span>
+              <span style={{ flex: 1, color: '#374151', fontSize: '14px' }}>
+                {option || <span style={{ color: '#d1d5db', fontStyle: 'italic' }}>(Empty option)</span>}
+              </span>
+            </div>
           ))}
         </div>
+      )}
 
-        <button
-          onClick={() => onNavigate(Math.min(exam.questions.length - 1, currentQuestionIndex + 1))}
-          disabled={currentQuestionIndex === exam.questions.length - 1}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '8px 16px',
-            background: currentQuestionIndex === exam.questions.length - 1 ? '#f3f4f6' : '#6366f1',
-            border: 'none',
+      {question.type === "fill-blank" && (
+        <div style={{ marginTop: '12px' }}>
+          <div style={{
+            display: 'inline-block',
+            minWidth: '200px',
+            borderBottom: '2px solid #6366f1',
+            padding: '8px 0',
+            color: '#6b7280',
+            fontSize: '14px'
+          }}>
+            _________________
+          </div>
+        </div>
+      )}
+
+      {question.type === "short-answer" && (
+        <div style={{ marginTop: '12px' }}>
+          <div style={{
+            padding: '40px 20px',
+            border: '2px dashed #d1d5db',
             borderRadius: '8px',
+            color: '#9ca3af',
+            textAlign: 'center',
+            background: '#f9fafb',
             fontSize: '13px',
-            fontWeight: 600,
-            color: currentQuestionIndex === exam.questions.length - 1 ? '#9ca3af' : 'white',
-            cursor: currentQuestionIndex === exam.questions.length - 1 ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s'
+            fontWeight: 500
+          }}>
+            [Answer space]
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Question Editor Component
+function QuestionEditor({ question, onChange }: { question: Question; onChange: (updates: Partial<Question>) => void }): JSX.Element {
+  return (
+    <div className="question-editor-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="editor-field">
+        <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Question Content</label>
+        <textarea
+          value={question.content}
+          onChange={(e) => onChange({ content: e.target.value })}
+          onClick={(e) => e.stopPropagation()}
+          onFocus={(e) => e.stopPropagation()}
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            resize: 'vertical',
+            minHeight: '100px',
+            transition: 'border-color 0.2s'
           }}
-        >
-          Next
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
+          onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+          onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+          placeholder="Enter question text..."
+          rows={4}
+        />
+      </div>
+
+      {question.type === "multiple-choice" && (
+        <div className="editor-field">
+          <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Options</label>
+          {question.options?.map((option, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ 
+                fontWeight: 700, 
+                color: '#6b7280',
+                minWidth: '32px',
+                background: '#f3f4f6',
+                padding: '8px 10px',
+                borderRadius: '6px',
+                fontSize: '13px',
+                textAlign: 'center'
+              }}>
+                {String.fromCharCode(65 + idx)}
+              </span>
+              <input
+                type="text"
+                value={option}
+                onChange={(e) => {
+                  const newOptions = [...(question.options || [])];
+                  newOptions[idx] = e.target.value;
+                  onChange({ options: newOptions });
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  transition: 'border-color 0.2s'
+                }}
+                onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+                onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+                placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+              />
+            </div>
+          ))}
+          
+          <div className="editor-field" style={{ marginTop: '16px' }}>
+            <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Correct Answer</label>
+            <select
+              value={question.correctAnswer as string}
+              onChange={(e) => onChange({ correctAnswer: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.stopPropagation()}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '14px',
+                background: 'white',
+                transition: 'border-color 0.2s'
+              }}
+              onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+              onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+            >
+              <option value="">Select correct answer</option>
+              {question.options?.map((_, idx) => (
+                <option key={idx} value={String.fromCharCode(65 + idx)}>
+                  Option {String.fromCharCode(65 + idx)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {question.type === "fill-blank" && (
+        <div className="editor-field">
+          <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Accepted Answer(s)</label>
+          <input
+            type="text"
+            value={Array.isArray(question.correctAnswer) ? question.correctAnswer.join(", ") : question.correctAnswer}
+            onChange={(e) => onChange({ correctAnswer: e.target.value.split(",").map(s => s.trim()) })}
+            onClick={(e) => e.stopPropagation()}
+            onFocus={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              transition: 'border-color 0.2s'
+            }}
+            onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+            onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+            placeholder="Enter accepted answers (comma-separated)"
+          />
+        </div>
+      )}
+
+      {question.type === "short-answer" && (
+        <div className="editor-field">
+          <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Model Answer</label>
+          <textarea
+            value={question.correctAnswer as string}
+            onChange={(e) => onChange({ correctAnswer: e.target.value })}
+            onClick={(e) => e.stopPropagation()}
+            onFocus={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontFamily: 'inherit',
+              resize: 'vertical',
+              minHeight: '80px',
+              transition: 'border-color 0.2s'
+            }}
+            onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+            onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+            placeholder="Enter model answer..."
+            rows={3}
+          />
+        </div>
+      )}
+
+      <div className="editor-field">
+        <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Points</label>
+        <input
+          type="number"
+          value={question.points}
+          onChange={(e) => onChange({ points: parseInt(e.target.value) || 0 })}
+          onClick={(e) => e.stopPropagation()}
+          onFocus={(e) => e.stopPropagation()}
+          min="0"
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '14px',
+            transition: 'border-color 0.2s'
+          }}
+          onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+          onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+        />
+      </div>
+
+      <div className="editor-field">
+        <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', marginBottom: '6px', display: 'block' }}>Explanation (Optional)</label>
+        <textarea
+          value={question.explanation || ""}
+          onChange={(e) => onChange({ explanation: e.target.value })}
+          onClick={(e) => e.stopPropagation()}
+          onFocus={(e) => e.stopPropagation()}
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: '2px solid #e5e7eb',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            resize: 'vertical',
+            minHeight: '80px',
+            transition: 'border-color 0.2s'
+          }}
+          onMouseOver={e => e.currentTarget.style.borderColor = '#6366f1'}
+          onMouseOut={e => e.currentTarget.style.borderColor = '#e5e7eb'}
+          placeholder="Add solution explanation..."
+          rows={3}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Preview Component
+function ExamPreview({ exam, onClose }: { exam: ExamData; onClose: () => void }): JSX.Element {
+  return (
+    <div className="exam-preview">
+      <div className="preview-header">
+        <h2>Preview Mode</h2>
+        <button onClick={onClose} className="close-preview-btn">Close Preview</button>
+      </div>
+      
+      <div className="preview-content">
+        <div className="preview-exam-header">
+          <h1>{exam.title}</h1>
+          <div className="preview-meta">
+            <p>Time Limit: {exam.timeLimitMinutes} minutes</p>
+            <p>Total Points: {exam.questions.reduce((sum, q) => sum + q.points, 0)}</p>
+          </div>
+        </div>
+
+        <div className="preview-questions">
+          {exam.questions.map((question, index) => (
+            <div key={question.id} className="preview-question">
+              <div className="preview-question-header">
+                <span className="preview-question-number">Question {index + 1}</span>
+                <span className="preview-points">[{question.points} points]</span>
+              </div>
+              <QuestionRenderer question={question} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 import { connectSocket } from "../lib/socket";
@@ -563,81 +563,46 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           </div>
         
         <nav className="sidebar-nav">
-          <button 
-            type="button" 
-            className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`} 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('Clicked Overview - navigating to /admin');
-              navigate("/admin");
-            }}
+          <NavLink 
+            to="/admin"
+            end
+            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
           >
             Overview
-          </button>
-          <button 
-            type="button" 
-            className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`} 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('Clicked Users - navigating to /admin/users');
-              navigate("/admin/users");
-            }}
+          </NavLink>
+          <NavLink 
+            to="/admin/users"
+            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
           >
             User Management
-          </button>
-          <button 
-            type="button" 
-            className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`} 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('Clicked Classrooms - navigating to /admin/classrooms');
-              navigate("/admin/classrooms");
-            }}
+          </NavLink>
+          <NavLink 
+            to="/admin/classrooms"
+            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
           >
             Classrooms
-          </button>
-          <button 
-            type="button" 
-            className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`} 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('Clicked Students - navigating to /admin/students');
-              navigate("/admin/students");
-            }}
+          </NavLink>
+          <NavLink 
+            to="/admin/students"
+            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
           >
             Students
-          </button>
-          <button 
-            type="button" 
-            className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`} 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('Clicked Exams - navigating to /admin/exams');
-              navigate("/admin/exams");
-            }}
+          </NavLink>
+          <NavLink 
+            to="/admin/exams"
+            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
           >
             Exams
-          </button>
+          </NavLink>
           <button type="button" className="nav-item" disabled>Live Monitoring</button>
           <button type="button" className="nav-item" disabled>Activity Logs</button>
           <button type="button" className="nav-item" disabled>Results</button>
-          <button 
-            type="button" 
-            className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`} 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('Clicked Recycle Bin - navigating to /admin/recycle-bin');
-              navigate("/admin/recycle-bin");
-            }}
+          <NavLink 
+            to="/admin/recycle-bin"
+            className={({ isActive }) => `nav-item ${isActive ? "nav-item-active" : ""}`}
           >
             Recycle Bin
-          </button>
+          </NavLink>
           <button type="button" className="nav-item" disabled>Settings</button>
         </nav>
 
