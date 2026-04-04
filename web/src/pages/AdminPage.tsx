@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 import { connectSocket } from "../lib/socket";
@@ -563,60 +563,69 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
           </div>
         
         <nav className="sidebar-nav">
-          <Link 
-            to="/admin"
+          <button
+            type="button"
             className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`}
-            onClick={(e) => {
-              console.log('Link clicked: Overview', e);
+            onClick={() => {
+              console.log('Navigating to: /admin');
+              navigate("/admin");
             }}
           >
             Overview
-          </Link>
-          <Link 
-            to="/admin/users"
+          </button>
+          <button
+            type="button"
             className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`}
-            onClick={(e) => {
-              console.log('Link clicked: Users', e);
+            onClick={() => {
+              console.log('Navigating to: /admin/users');
+              navigate("/admin/users");
             }}
           >
             User Management
-          </Link>
-          <Link 
-            to="/admin/classrooms"
+          </button>
+          <button
+            type="button"
             className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`}
-            onClick={(e) => {
-              console.log('Link clicked: Classrooms', e);
+            onClick={() => {
+              console.log('Navigating to: /admin/classrooms');
+              navigate("/admin/classrooms");
             }}
           >
             Classrooms
-          </Link>
-          <Link 
-            to="/admin/students"
+          </button>
+          <button
+            type="button"
             className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`}
-            onClick={(e) => {
-              console.log('Link clicked: Students', e);
+            onClick={() => {
+              console.log('Navigating to: /admin/students');
+              navigate("/admin/students");
             }}
           >
             Students
-          </Link>
-          <Link 
-            to="/admin/exams"
+          </button>
+          <button
+            type="button"
             className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`}
-            onClick={(e) => {
-              console.log('Link clicked: Exams', e);
+            onClick={() => {
+              console.log('Navigating to: /admin/exams');
+              navigate("/admin/exams");
             }}
           >
             Exams
-          </Link>
+          </button>
           <button type="button" className="nav-item" disabled>Live Monitoring</button>
           <button type="button" className="nav-item" disabled>Activity Logs</button>
           <button type="button" className="nav-item" disabled>Results</button>
-          <Link 
-            to="/admin/recycle-bin"
+          <button
+            type="button"
             className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`}
+            onClick={() => {
+              console.log('Navigating to: /admin/recycle-bin');
+              navigate("/admin/recycle-bin");
+            }}
           >
             Recycle Bin
-          </Link>
+          </button>
           <button type="button" className="nav-item" disabled>Settings</button>
         </nav>
 
