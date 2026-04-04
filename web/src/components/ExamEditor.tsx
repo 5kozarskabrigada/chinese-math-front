@@ -42,7 +42,19 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
   const [previewMode, setPreviewMode] = useState(false);
 
   function generateExamCode(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const digits = "23456789";
+    const all = `${letters}${digits}`;
+    const code = [
+      letters[Math.floor(Math.random() * letters.length)],
+      digits[Math.floor(Math.random() * digits.length)]
+    ];
+
+    while (code.length < 6) {
+      code.push(all[Math.floor(Math.random() * all.length)]);
+    }
+
+    return code.sort(() => Math.random() - 0.5).join("");
   }
 
   function addQuestion(type: Question["type"]) {

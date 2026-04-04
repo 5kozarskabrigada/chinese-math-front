@@ -20,7 +20,7 @@ type JoinedExam = {
 
 export function StudentPage(props: { auth: AuthState | null; onLogout: () => void }): JSX.Element {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
-  const [examCode, setExamCode] = useState("123456");
+  const [examCode, setExamCode] = useState("M4TH2X");
   const [joinedExam, setJoinedExam] = useState<JoinedExam | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -223,8 +223,8 @@ export function StudentPage(props: { auth: AuthState | null; onLogout: () => voi
                 <label>Exam Access Code</label>
                 <input 
                   value={examCode} 
-                  onChange={(event) => setExamCode(event.target.value)} 
-                  placeholder="Enter 6-digit code"
+                  onChange={(event) => setExamCode(event.target.value.toUpperCase())} 
+                  placeholder="Enter 6-character code"
                   maxLength={6}
                   style={{ textAlign: 'center', fontSize: '16px', letterSpacing: '3px' }}
                 />

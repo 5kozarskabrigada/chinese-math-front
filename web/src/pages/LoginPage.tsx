@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { User, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, BookOpen, Eye, EyeOff, Lock, ShieldCheck, User } from "lucide-react";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 
@@ -39,10 +39,17 @@ export function LoginPage(props: {
 
   return (
     <main className="login-page">
-      <section className="panel">
-        <h1>Chinese Math Mock Exam</h1>
-        <p className="muted">Welcome! Please sign in to continue to your examination dashboard.</p>
-        
+      <div className="login-orb login-orb-left" />
+      <div className="login-orb login-orb-right" />
+      <section className="panel login-panel">
+        <div className="login-brand-mark">
+          <BookOpen size={28} />
+        </div>
+        <div className="login-panel-header">
+          <h1>Welcome Back</h1>
+          <p className="muted">Sign in to manage classrooms, publish exams, and monitor student sessions.</p>
+        </div>
+
         <form onSubmit={handleSubmit} className="stack">
           <div className="input-group">
             <label>Username</label>
@@ -84,15 +91,27 @@ export function LoginPage(props: {
             </div>
           </div>
           
-          {error ? <div className="error">❌ {error}</div> : null}
+          {error ? <div className="error">{error}</div> : null}
           
-          <button type="submit" disabled={loading}>
-            {loading ? "Signing in..." : "Sign In"}
+          <button type="submit" disabled={loading} className="login-submit-button">
+            {loading ? "Signing in..." : (
+              <>
+                <span>Sign In</span>
+                <ArrowRight size={18} />
+              </>
+            )}
           </button>
         </form>
         
-        <div className="hint">
-          <strong>Demo Accounts:</strong><br />
+        <div className="login-footer-note">
+          <div className="login-note-row">
+            <ShieldCheck size={16} />
+            <span>Use your administrator credentials to access the control panel.</span>
+          </div>
+        </div>
+
+        <div className="hint login-demo-hint">
+          <strong>Demo Accounts</strong><br />
           Admin: admin-1 / admin123<br />
           Student: stu-1001 / student123
         </div>

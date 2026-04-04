@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Activity, BarChart2, BookOpen, FileText, GraduationCap, LogOut, Settings, Trash2, Users } from "lucide-react";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 import { connectSocket } from "../lib/socket";
@@ -556,12 +557,10 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
         <aside className="admin-sidebar">
           <div className="sidebar-header">
             <div className="sidebar-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="icon-math">
-                <path d="M3 3h18M3 9h18M3 15h18M3 21h18M9 3v18M15 3v18" />
-              </svg>
+              <BookOpen className="icon-math" />
             </div>
             <div>
-              <h1 className="sidebar-title">Math Admin</h1>
+              <h1 className="sidebar-title">Chinese Math</h1>
               <p className="sidebar-subtitle">Control Panel</p>
             </div>
           </div>
@@ -572,6 +571,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
             className={`nav-item ${activeView === "overview" ? "nav-item-active" : ""}`}
             onClick={() => navigate("/admin")}
           >
+            <BarChart2 size={18} />
             Overview
           </button>
           <button
@@ -579,6 +579,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
             className={`nav-item ${activeView === "users" ? "nav-item-active" : ""}`}
             onClick={() => navigate("/admin/users")}
           >
+            <Users size={18} />
             User Management
           </button>
           <button
@@ -586,6 +587,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
             className={`nav-item ${activeView === "classrooms" ? "nav-item-active" : ""}`}
             onClick={() => navigate("/admin/classrooms")}
           >
+            <GraduationCap size={18} />
             Classrooms
           </button>
           <button
@@ -593,6 +595,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
             className={`nav-item ${activeView === "students" ? "nav-item-active" : ""}`}
             onClick={() => navigate("/admin/students")}
           >
+            <Users size={18} />
             Students
           </button>
           <button
@@ -600,19 +603,21 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
             className={`nav-item ${activeView === "exams" ? "nav-item-active" : ""}`}
             onClick={() => navigate("/admin/exams")}
           >
+            <BookOpen size={18} />
             Exams
           </button>
-          <button type="button" className="nav-item" disabled>Live Monitoring</button>
-          <button type="button" className="nav-item" disabled>Activity Logs</button>
-          <button type="button" className="nav-item" disabled>Results</button>
+          <button type="button" className="nav-item" disabled><Activity size={18} />Live Monitoring</button>
+          <button type="button" className="nav-item" disabled><FileText size={18} />Activity Logs</button>
+          <button type="button" className="nav-item" disabled><FileText size={18} />Results</button>
           <button
             type="button"
             className={`nav-item ${activeView === "recycleBin" ? "nav-item-active" : ""}`}
             onClick={() => navigate("/admin/recycle-bin")}
           >
+            <Trash2 size={18} />
             Recycle Bin
           </button>
-          <button type="button" className="nav-item" disabled>Settings</button>
+          <button type="button" className="nav-item" disabled><Settings size={18} />Settings</button>
         </nav>
 
         <div className="sidebar-footer">
@@ -624,9 +629,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
             </div>
           </div>
           <button onClick={props.onLogout} className="logout-button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="icon-logout">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-            </svg>
+            <LogOut className="icon-logout" />
             <span>Sign Out</span>
           </button>
         </div>
