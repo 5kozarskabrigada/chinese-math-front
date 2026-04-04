@@ -1,3 +1,4 @@
+import { ArrowLeft, CheckCircle2, Clock3, Eye, KeyRound, LayoutGrid, PenSquare, Rows3, Save } from "lucide-react";
 import { useState } from "react";
 import type { AuthState } from "../lib/auth";
 
@@ -40,6 +41,29 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
 
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
+
+  const questionTypes: Array<{ type: Question["type"]; label: string; icon: JSX.Element }> = [
+    {
+      type: "multiple-choice",
+      label: "Multiple Choice",
+      icon: <CheckCircle2 size={18} />
+    },
+    {
+      type: "fill-blank",
+      label: "Fill in Blank",
+      icon: <Rows3 size={18} />
+    },
+    {
+      type: "short-answer",
+      label: "Short Answer",
+      icon: <PenSquare size={18} />
+    },
+    {
+      type: "multi-part",
+      label: "Multi-Part",
+      icon: <LayoutGrid size={18} />
+    }
+  ];
 
   function generateExamCode(): string {
     const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -116,177 +140,25 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
         
         <nav className="exam-editor-nav">
           <button className="nav-button active">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <path d="M3 9h18M9 21V9"/>
-            </svg>
+            <LayoutGrid size={18} />
             <span>Overview</span>
           </button>
-          
-          <div style={{ 
-            fontSize: '11px', 
-            fontWeight: 700, 
-            color: '#9ca3af', 
-            textTransform: 'uppercase', 
-            letterSpacing: '0.5px', 
-            padding: '16px 12px 8px',
-            marginTop: '8px'
-          }}>
+
+          <div className="nav-section-title">
             Question Types
           </div>
-          
-          <button 
-            onClick={() => addQuestion("multiple-choice")} 
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px 14px',
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: '#374151',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              textAlign: 'left',
-              marginBottom: '8px'
-            }}
-            onMouseOver={e => {
-              e.currentTarget.style.background = '#f0f9ff';
-              e.currentTarget.style.borderColor = '#6366f1';
-              e.currentTarget.style.color = '#6366f1';
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.borderColor = '#e5e7eb';
-              e.currentTarget.style.color = '#374151';
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M9 12l2 2 4-4"/>
-            </svg>
-            <span>Multiple Choice</span>
-          </button>
-          
-          <button 
-            onClick={() => addQuestion("fill-blank")} 
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px 14px',
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: '#374151',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              textAlign: 'left',
-              marginBottom: '8px'
-            }}
-            onMouseOver={e => {
-              e.currentTarget.style.background = '#f0f9ff';
-              e.currentTarget.style.borderColor = '#6366f1';
-              e.currentTarget.style.color = '#6366f1';
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.borderColor = '#e5e7eb';
-              e.currentTarget.style.color = '#374151';
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="8" y1="12" x2="16" y2="12"/>
-              <line x1="8" y1="12" x2="8" y2="12.01"/>
-              <line x1="16" y1="12" x2="16" y2="12.01"/>
-            </svg>
-            <span>Fill in Blank</span>
-          </button>
-          
-          <button 
-            onClick={() => addQuestion("short-answer")} 
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px 14px',
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: '#374151',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              textAlign: 'left',
-              marginBottom: '8px'
-            }}
-            onMouseOver={e => {
-              e.currentTarget.style.background = '#f0f9ff';
-              e.currentTarget.style.borderColor = '#6366f1';
-              e.currentTarget.style.color = '#6366f1';
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.borderColor = '#e5e7eb';
-              e.currentTarget.style.color = '#374151';
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 20h9"/>
-              <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
-            </svg>
-            <span>Short Answer</span>
-          </button>
-          
-          <button 
-            onClick={() => addQuestion("multi-part")} 
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px 14px',
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: '#374151',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              textAlign: 'left',
-              marginBottom: '8px'
-            }}
-            onMouseOver={e => {
-              e.currentTarget.style.background = '#f0f9ff';
-              e.currentTarget.style.borderColor = '#6366f1';
-              e.currentTarget.style.color = '#6366f1';
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.borderColor = '#e5e7eb';
-              e.currentTarget.style.color = '#374151';
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="8" y1="6" x2="21" y2="6"/>
-              <line x1="8" y1="12" x2="21" y2="12"/>
-              <line x1="8" y1="18" x2="21" y2="18"/>
-              <line x1="3" y1="6" x2="3.01" y2="6"/>
-              <line x1="3" y1="12" x2="3.01" y2="12"/>
-              <line x1="3" y1="18" x2="3.01" y2="18"/>
-            </svg>
-            <span>Multi-Part</span>
-          </button>
+
+          {questionTypes.map((questionType) => (
+            <button
+              key={questionType.type}
+              type="button"
+              className="question-type-button"
+              onClick={() => addQuestion(questionType.type)}
+            >
+              {questionType.icon}
+              <span>{questionType.label}</span>
+            </button>
+          ))}
         </nav>
       </div>
 
@@ -295,98 +167,40 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
         {/* Top Bar */}
         <div className="exam-editor-header">
           <div className="exam-editor-top-bar">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+            <div className="exam-editor-toolbar-left">
               <button onClick={props.onBack} className="back-button">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
+                <ArrowLeft size={18} />
                 Back
               </button>
               <span className="exam-title-text">{exam.title || "Untitled Exam"}</span>
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="exam-editor-toolbar-actions">
               <button 
-                onClick={() => setPreviewMode(!previewMode)} 
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 18px',
-                  background: 'white',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: '#374151',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={e => {
-                  e.currentTarget.style.background = '#f9fafb';
-                  e.currentTarget.style.borderColor = '#9ca3af';
-                }}
-                onMouseOut={e => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.borderColor = '#e5e7eb';
-                }}
+                type="button"
+                className="editor-toolbar-button"
+                onClick={() => setPreviewMode(!previewMode)}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
+                <Eye size={16} />
                 Preview
               </button>
               
               <button 
-                onClick={() => props.onSave(exam)} 
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 20px',
-                  background: '#6366f1',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: 'white',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 1px 3px 0 rgba(99, 102, 241, 0.3)'
-                }}
-                onMouseOver={e => {
-                  e.currentTarget.style.background = '#4f46e5';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(99, 102, 241, 0.3)';
-                }}
-                onMouseOut={e => {
-                  e.currentTarget.style.background = '#6366f1';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 1px 3px 0 rgba(99, 102, 241, 0.3)';
-                }}
+                type="button"
+                className="editor-toolbar-button editor-toolbar-button-primary"
+                onClick={() => props.onSave(exam)}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-                  <polyline points="17 21 17 13 7 13 7 21"/>
-                  <polyline points="7 3 7 8 15 8"/>
-                </svg>
+                <Save size={16} />
                 Save Exam
               </button>
             </div>
           </div>
           
           {/* Control Panel */}
-          <div style={{ padding: '0 24px 20px' }}>
-            <div style={{
-              padding: '20px',
-              borderRadius: '12px',
-              border: exam.isActive ? '2px solid #a7f3d0' : '2px solid #e5e7eb',
-              background: exam.isActive ? '#d1fae5' : 'white',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="exam-editor-control-wrap">
+            <div className={`editor-control-panel ${exam.isActive ? 'editor-control-panel-active' : ''}`}>
+              <div className="editor-control-row">
+                <div className="editor-control-group">
                   <label className="toggle-switch">
                     <input
                       type="checkbox"
@@ -395,57 +209,33 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                     />
                     <span className="toggle-slider"></span>
                   </label>
-                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#374151' }}>
+                  <span className="editor-control-state">
                     {exam.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </div>
                 
-                <div style={{ width: '1px', height: '28px', background: '#d1d5db' }}></div>
+                <div className="editor-control-divider"></div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                  </svg>
+                <div className="editor-control-group">
+                  <Clock3 size={18} />
                   <input
                     type="number"
                     value={exam.timeLimitMinutes}
                     onChange={(e) => setExam(prev => ({ ...prev, timeLimitMinutes: parseInt(e.target.value) || 60 }))}
-                    style={{
-                      width: '80px',
-                      padding: '8px 12px',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '8px',
-                      textAlign: 'center',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      background: 'white'
-                    }}
+                    className="editor-time-input"
                     min="1"
                   />
-                  <span style={{ fontSize: '14px', color: '#6b7280', fontWeight: 500 }}>minutes</span>
+                  <span className="editor-control-copy">minutes</span>
                 </div>
                 
-                <div style={{ width: '1px', height: '28px', background: '#d1d5db' }}></div>
+                <div className="editor-control-divider"></div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                  <span style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>
+                <div className="editor-control-group">
+                  <KeyRound size={18} />
+                  <span className="editor-control-label">
                     Code:
                   </span>
-                  <span style={{
-                    fontFamily: 'monospace',
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    color: exam.isActive ? '#065f46' : '#374151',
-                    letterSpacing: '0.1em',
-                    background: exam.isActive ? '#ecfdf5' : '#f3f4f6',
-                    padding: '6px 12px',
-                    borderRadius: '6px'
-                  }}>
+                  <span className={`editor-code-chip ${exam.isActive ? 'editor-code-chip-active' : ''}`}>
                     {exam.code}
                   </span>
                 </div>

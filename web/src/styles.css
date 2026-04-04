@@ -2392,6 +2392,35 @@ button.danger,
   color: #2563eb;
 }
 
+.question-type-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.question-type-button:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.question-type-button svg {
+  flex-shrink: 0;
+}
+
 .exam-editor-main {
   flex: 1;
   display: flex;
@@ -2411,6 +2440,138 @@ button.danger,
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
+}
+
+.exam-editor-toolbar-left,
+.exam-editor-toolbar-actions,
+.editor-control-row,
+.editor-control-group {
+  display: flex;
+  align-items: center;
+}
+
+.exam-editor-toolbar-left {
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.exam-editor-toolbar-actions {
+  gap: 12px;
+}
+
+.editor-toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.editor-toolbar-button:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.editor-toolbar-button-primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border-color: #1d4ed8;
+  color: #fff;
+  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.18);
+}
+
+.editor-toolbar-button-primary:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  border-color: #1e40af;
+}
+
+.exam-editor-control-wrap {
+  padding: 0 24px 20px;
+}
+
+.editor-control-panel {
+  padding: 20px 22px;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.editor-control-panel-active {
+  background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
+  border-color: #bbf7d0;
+}
+
+.editor-control-row {
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.editor-control-group {
+  gap: 10px;
+}
+
+.editor-control-state {
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.editor-control-divider {
+  width: 1px;
+  height: 28px;
+  background: #d1d5db;
+}
+
+.editor-time-input {
+  width: 88px;
+  padding: 8px 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  background: #fff;
+}
+
+.editor-control-copy {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.editor-control-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.editor-code-chip {
+  padding: 7px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #334155;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  border: 1px solid #e2e8f0;
+}
+
+.editor-code-chip-active {
+  background: #ffffff;
+  color: #047857;
+  border-color: #bbf7d0;
 }
 
 .back-button {
@@ -3666,6 +3827,16 @@ button:hover:not(:disabled),
 
 .user-form {
   padding: 0 28px 28px;
+}
+
+.user-form-section .section-title::after {
+  content: "Designed for quick setup and clear review before publishing.";
+  display: block;
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: normal;
 }
 
 .form-row {
