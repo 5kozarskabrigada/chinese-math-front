@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { ArrowRight, BookOpen, Eye, EyeOff, Lock, ShieldCheck, User } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, User } from "lucide-react";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 
@@ -43,13 +43,9 @@ export function LoginPage(props: {
       <div className="login-orb login-orb-right" />
       <section className="panel login-panel">
         <div className="login-brand-row">
-          <div className="login-brand-mark">
-            <BookOpen size={28} />
-          </div>
           <div className="login-brand-copy">
-            <p className="login-eyebrow">Chinese Math Platform</p>
-            <h1>Sign in to the exam portal</h1>
-            <p className="muted">Manage classrooms, prepare exam sessions, and monitor students from a single workspace.</p>
+            <h1>Chinese Math Mock Exam</h1>
+            <p className="login-welcome-copy">Welcome back.</p>
           </div>
         </div>
 
@@ -105,13 +101,6 @@ export function LoginPage(props: {
             )}
           </button>
         </form>
-        
-        <div className="login-footer-note">
-          <div className="login-note-row">
-            <ShieldCheck size={16} />
-            <span>Use your administrator or student credentials to access the secured portal.</span>
-          </div>
-        </div>
 
         <div className="login-demo-grid">
           <div className="hint login-demo-card">
