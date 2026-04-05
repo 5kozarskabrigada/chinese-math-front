@@ -319,21 +319,20 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
               </button>
               <div className="exam-editor-heading-block">
                 <p className="exam-editor-heading-kicker">48 questions · multiple choice only</p>
-                <input
-                  type="text"
-                  value={exam.title}
-                  onChange={(event) => updateExam({ title: event.target.value })}
-                  className="exam-title-input-inline"
-                  placeholder="Exam title"
-                />
+                <div className="exam-editor-heading-row">
+                  <input
+                    type="text"
+                    value={exam.title}
+                    onChange={(event) => updateExam({ title: event.target.value })}
+                    className="exam-title-input-inline"
+                    placeholder="Exam title"
+                  />
+                  <button type="button" className="editor-toolbar-button editor-toolbar-button-primary exam-editor-save-inline" onClick={saveExam}>
+                    <Save size={15} />
+                    Save Exam
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div className="exam-editor-toolbar-actions">
-              <button type="button" className="editor-toolbar-button editor-toolbar-button-primary" onClick={saveExam}>
-                <Save size={16} />
-                Save Exam
-              </button>
             </div>
           </div>
 

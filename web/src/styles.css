@@ -5197,31 +5197,41 @@ button:hover:not(:disabled),
 
 .exam-editor-top-bar-clean {
   height: auto;
-  padding: 22px 28px 14px;
-  align-items: flex-start;
+  padding: 16px 22px 10px;
+  align-items: center;
 }
 
 .exam-editor-toolbar-left-clean {
-  gap: 18px;
-  align-items: flex-start;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
 }
 
 .exam-editor-heading-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.exam-editor-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   min-width: 0;
 }
 
 .exam-title-input-inline {
-  min-width: 320px;
+  min-width: 0;
   padding: 0;
   border: none;
   background: transparent;
   color: #0f172a;
-  font-size: 30px;
+  font-size: 24px;
   font-weight: 800;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.04em;
 }
 
 .exam-title-input-inline:focus {
@@ -5231,10 +5241,31 @@ button:hover:not(:disabled),
 .exam-editor-heading-kicker {
   margin: 0;
   color: #64748b;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+
+.exam-editor-top-bar-clean .back-button {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.exam-editor-top-bar-clean .back-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.exam-editor-save-inline {
+  padding: 8px 12px;
+  font-size: 12px;
+  gap: 6px;
+  flex: 0 0 auto;
+  box-shadow: none;
 }
 
 .exam-title-supporting {
@@ -6158,8 +6189,8 @@ button:hover:not(:disabled),
 }
 
 .exam-editor-top-bar-compact {
-  gap: 18px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex-wrap: nowrap;
 }
 
 .exam-editor-control-wrap-stacked {
@@ -6180,7 +6211,7 @@ button:hover:not(:disabled),
   width: min(100%, 560px);
   max-width: 100%;
   min-width: 0;
-  font-size: clamp(24px, 2.4vw, 30px);
+  font-size: clamp(20px, 2vw, 24px);
   overflow-wrap: anywhere;
 }
 
@@ -6549,17 +6580,11 @@ button:hover:not(:disabled),
 
 @media (max-width: 1280px) {
   .exam-editor-top-bar-clean {
-    align-items: stretch;
+    align-items: center;
   }
 
-  .exam-editor-toolbar-left-clean,
-  .exam-editor-toolbar-actions {
+  .exam-editor-toolbar-left-clean {
     width: 100%;
-  }
-
-  .exam-editor-toolbar-actions {
-    justify-content: flex-start;
-    flex-wrap: wrap;
   }
 
   .editor-settings-grid {
@@ -6631,6 +6656,17 @@ button:hover:not(:disabled),
   .exam-editor-top-bar-clean {
     padding-left: 18px;
     padding-right: 18px;
+  }
+
+  .exam-editor-top-bar-clean,
+  .exam-editor-toolbar-left-clean,
+  .exam-editor-heading-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .exam-editor-heading-row {
+    gap: 8px;
   }
 
   .exam-editor-sidebar-clean {
