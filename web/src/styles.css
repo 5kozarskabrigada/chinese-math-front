@@ -5814,7 +5814,7 @@ button:hover:not(:disabled),
 
 .exam-option-editor-grid-sat {
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 0;
 }
 
 .exam-option-editor {
@@ -5829,14 +5829,14 @@ button:hover:not(:disabled),
 }
 
 .exam-option-editor-selected {
-  border-color: #93c5fd;
-  background: #f8fbff;
+  border-color: #bfdbfe;
+  background: transparent;
 }
 
 .exam-option-editor-sat {
-  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-columns: 56px minmax(0, 1fr);
   align-items: flex-start;
-  padding: 14px 0;
+  padding: 18px 0;
   border: none;
   border-bottom: 1px solid #e2e8f0;
   border-radius: 0;
@@ -5857,7 +5857,7 @@ button:hover:not(:disabled),
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   padding: 2px 0 0;
   border: none;
@@ -5875,12 +5875,14 @@ button:hover:not(:disabled),
 }
 
 .exam-option-select .editor-option-badge {
-  min-width: 38px;
-  height: 38px;
+  min-width: 34px;
+  height: 34px;
   border-radius: 999px;
-  background: #f8fafc;
-  color: #475569;
+  background: #ffffff;
+  color: #334155;
   border: 1px solid #dbe4f0;
+  font-size: 12px;
+  box-shadow: none;
 }
 
 .exam-option-select-selected {
@@ -5888,23 +5890,29 @@ button:hover:not(:disabled),
 }
 
 .exam-option-select-selected .editor-option-badge {
-  border-color: #bfdbfe;
-  background: #eff6ff;
+  border-color: #93c5fd;
+  background: #ffffff;
   color: #1d4ed8;
 }
 
 .exam-option-select-copy {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 18px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 24px;
 }
 
 .exam-option-select-state {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.exam-option-select-selected .exam-option-select-state {
+  color: #1d4ed8;
 }
 
 .exam-option-select-dot {
@@ -5920,6 +5928,52 @@ button:hover:not(:disabled),
 
 .exam-option-input-block-sat .sat-rich-editor {
   min-width: 0;
+  gap: 8px;
+}
+
+.exam-option-input-block-sat .sat-rich-editor-head {
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.exam-option-input-block-sat .sat-rich-editor-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.exam-option-input-block-sat .sat-rich-editor-label-focused {
+  color: #334155;
+}
+
+.exam-option-input-block-sat .sat-rich-editor-head-actions {
+  gap: 6px;
+}
+
+.exam-option-input-block-sat .sat-rich-editor-action {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+.exam-option-input-block-sat .sat-rich-editor-shell {
+  border-radius: 14px;
+  border-color: #e2e8f0;
+  box-shadow: none;
+}
+
+.exam-option-input-block-sat .sat-rich-editor-shell-focused {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.exam-option-input-block-sat .sat-unified-toolbar-primary,
+.exam-option-input-block-sat .sat-unified-toolbar-secondary {
+  padding: 8px 10px;
+}
+
+.exam-option-input-block-sat .sat-tiptap-surface-option {
+  min-height: 84px;
+  padding: 14px 16px;
 }
 
 .question-editor-footer-clean {
