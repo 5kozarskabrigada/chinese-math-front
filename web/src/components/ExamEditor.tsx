@@ -651,6 +651,10 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
 
                   <div className="editor-field">
                     <label>Answer Options</label>
+                    <div className="editor-field-supporting">
+                      <span>{currentQuestion.options.filter((option) => option.trim()).length}/4 options filled</span>
+                      <span>{currentQuestion.correctAnswer ? `Correct answer: ${currentQuestion.correctAnswer}` : "Select the correct answer"}</span>
+                    </div>
                     <div className="exam-option-editor-list">
                       {OPTION_LABELS.map((label, index) => {
                         const isSelected = currentQuestion.correctAnswer === label;
@@ -684,11 +688,6 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                         );
                       })}
                     </div>
-                  </div>
-
-                  <div className="question-editor-footer-clean">
-                    <span>{currentQuestion.options.filter((option) => option.trim()).length}/4 options filled</span>
-                    <span>{currentQuestion.correctAnswer ? `Correct answer: ${currentQuestion.correctAnswer}` : "Select the correct answer"}</span>
                   </div>
                 </div>
               </section>

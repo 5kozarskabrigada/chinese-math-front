@@ -109,6 +109,10 @@ label {
   padding-left: 40px;
 }
 
+.input-with-icon:has(.password-toggle) input {
+  padding-right: 42px;
+}
+
 input {
   width: 100%;
   border: 2px solid var(--border-color);
@@ -136,33 +140,36 @@ input:focus {
 
 .password-toggle {
   position: absolute;
-  right: 0;
+  right: 12px;
   top: 50%;
-  margin-top: -12px;
+  transform: translateY(-50%);
   background: none;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 8px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: auto;
+  height: auto;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 .password-toggle:hover,
 .password-toggle:active,
 .password-toggle:focus {
-  color: var(--text-muted);
+  color: var(--text-primary);
   background: none;
   border: none;
   outline: none;
+  box-shadow: none;
 }
 
 .input-with-icon .password-toggle {
-  right: 0;
-  padding: 12px;
+  right: 14px;
+  padding: 0;
 }
 
 button {
@@ -5525,6 +5532,7 @@ button:hover:not(:disabled),
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: visible;
 }
 
 .exam-editor-header-compact {
@@ -5535,10 +5543,58 @@ button:hover:not(:disabled),
 
 .exam-editor-top-bar-compact {
   gap: 18px;
+  flex-wrap: wrap;
 }
 
 .exam-editor-control-wrap-stacked {
   padding-top: 0;
+}
+
+.exam-editor-single-scroll {
+  height: auto;
+  min-height: 100vh;
+}
+
+.exam-editor-heading-block {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.exam-title-input-inline {
+  width: min(100%, 560px);
+  max-width: 100%;
+  min-width: 0;
+  font-size: clamp(24px, 2.4vw, 30px);
+  overflow-wrap: anywhere;
+}
+
+.exam-editor-workspace,
+.exam-editor-workspace-clean,
+.exam-editor-workspace-single-scroll {
+  overflow: visible;
+}
+
+.exam-editor-canvas,
+.exam-editor-canvas-clean {
+  width: 100%;
+  max-width: 980px;
+}
+
+.exam-focus-card,
+.exam-focus-card-modern,
+.editor-section-card {
+  overflow: visible;
+}
+
+.editor-field-supporting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 12px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .editor-settings-grid {
@@ -5843,6 +5899,22 @@ button:hover:not(:disabled),
   color: #334155;
 }
 
+@media (max-width: 1280px) {
+  .exam-editor-top-bar-clean {
+    align-items: stretch;
+  }
+
+  .exam-editor-toolbar-left-clean,
+  .exam-editor-toolbar-actions {
+    width: 100%;
+  }
+
+  .exam-editor-toolbar-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-width: 1180px) {
   .editor-settings-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5858,17 +5930,50 @@ button:hover:not(:disabled),
   .editor-stats-row {
     grid-template-columns: 1fr;
   }
+
+  .exam-editor-sidebar-clean {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .exam-question-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
   .editor-code-row,
-  .preview-question-header {
+  .preview-question-header,
+  .editor-field-supporting {
     flex-direction: column;
     align-items: flex-start;
   }
 
   .editor-segmented-control {
     flex-direction: column;
+  }
+
+  .exam-editor-workspace-clean,
+  .exam-editor-control-wrap-clean,
+  .exam-editor-top-bar-clean {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .exam-editor-sidebar-clean {
+    padding: 18px 14px;
+  }
+
+  .exam-question-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .question-nav-button,
+  .editor-toolbar-button,
+  .back-button {
+    width: 100%;
+    justify-content: center;
   }
 
   .question-option-item {
