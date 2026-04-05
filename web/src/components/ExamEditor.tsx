@@ -1,4 +1,4 @@
-import { AlignCenter, AlignLeft, AlignRight, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Clock3, RefreshCcw, Save, ShieldAlert, Users } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, ArrowLeft, Bold, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Italic, List, ListOrdered, RefreshCcw, Save, ShieldAlert, Underline, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
@@ -54,31 +54,63 @@ type MathTemplate = {
   insert: string;
 };
 
+type MathGroup = {
+  label: string;
+  items: MathTemplate[];
+};
+
 const TOTAL_QUESTIONS = 48;
 const OPTION_LABELS = ["A", "B", "C", "D"] as const;
-const CURSOR_TOKEN = "__CURSOR__";
-const MATH_TEMPLATES: MathTemplate[] = [
-  { label: "√", insert: `√(${CURSOR_TOKEN})` },
-  { label: "a/b", insert: `(${CURSOR_TOKEN})/()` },
-  { label: "x²", insert: `x^(${CURSOR_TOKEN})` },
-  { label: "∫", insert: `∫(${CURSOR_TOKEN}) dx` },
-  { label: "∑", insert: `∑(${CURSOR_TOKEN})` },
-  { label: "π", insert: `π` },
-  { label: "θ", insert: `θ` },
-  { label: "∞", insert: `∞` },
-  { label: "≈", insert: `≈` },
-  { label: "≠", insert: `≠` },
-  { label: "≤", insert: `≤` },
-  { label: "≥", insert: `≥` },
-  { label: "±", insert: `±` },
-  { label: "×", insert: `×` },
-  { label: "÷", insert: `÷` },
-  { label: "°", insert: `°` },
-  { label: "→", insert: `→` },
-  { label: "∠", insert: `∠` },
-  { label: "△", insert: `△` },
-  { label: "⊥", insert: `⊥` },
-  { label: "∥", insert: `∥` }
+const PRIMARY_MATH_TEMPLATES: MathTemplate[] = [
+  { label: "½", insert: "()/()" },
+  { label: "√", insert: "√()" },
+  { label: "∛", insert: "∛()" },
+  { label: "xʸ", insert: "^()" },
+  { label: "xᵧ", insert: "_()" },
+  { label: "|x|", insert: "| |" }
+];
+
+const SECONDARY_MATH_GROUPS: MathGroup[] = [
+  {
+    label: "Trig",
+    items: [
+      { label: "sin", insert: "sin()" },
+      { label: "cos", insert: "cos()" },
+      { label: "tan", insert: "tan()" }
+    ]
+  },
+  {
+    label: "Rel",
+    items: [
+      { label: "≤", insert: "≤" },
+      { label: "≥", insert: "≥" },
+      { label: "≠", insert: "≠" },
+      { label: "≈", insert: "≈" }
+    ]
+  },
+  {
+    label: "Sym",
+    items: [
+      { label: "π", insert: "π" },
+      { label: "θ", insert: "θ" },
+      { label: "∞", insert: "∞" },
+      { label: "°", insert: "°" },
+      { label: "°C", insert: "°C" },
+      { label: "±", insert: "±" },
+      { label: "×", insert: "×" },
+      { label: "÷", insert: "÷" }
+    ]
+  },
+  {
+    label: "Geo",
+    items: [
+      { label: "∠", insert: "∠" },
+      { label: "△", insert: "△" },
+      { label: "∥", insert: "∥" },
+      { label: "⊥", insert: "⊥" },
+      { label: "→", insert: "→" }
+    ]
+  }
 ];
 
 const ALIGNMENT_OPTIONS: Array<{ value: FieldAlignment; label: string; icon: typeof AlignLeft }> = [
@@ -154,19 +186,8 @@ function normalizeExamData(source?: Partial<ExamData> & { questions?: Partial<Qu
   };
 }
 
-function MathPreview(props: { value: string; placeholder: string; alignment?: FieldAlignment }): JSX.Element | null {
-  if (!props.value.trim()) {
-    return null;
-  }
-
-  return (
-    <div className="math-render-preview">
-      <span className="math-render-label">Preview</span>
-      <div className={`math-render-surface math-render-surface-${props.alignment ?? "left"}`}>
-        <span className="math-render-text">{props.value || props.placeholder}</span>
-      </div>
-    </div>
-  );
+function stripEditorContent(value: string): string {
+  return value.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 }
 
 export function ExamEditor(props: ExamEditorProps): JSX.Element {
@@ -177,8 +198,8 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
   const [loading, setLoading] = useState(Boolean(props.examId));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeField, setActiveField] = useState<{ kind: "content" | "option"; optionIndex?: number }>({ kind: "content" });
-  const promptRef = useRef<HTMLTextAreaElement | null>(null);
-  const optionRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const promptRef = useRef<HTMLDivElement | null>(null);
+  const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -244,12 +265,34 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
     () =>
       exam.questions.filter(
         (question) =>
-          question.content.trim() &&
-          question.options.every((option) => option.trim()) &&
+          stripEditorContent(question.content) &&
+          question.options.every((option) => stripEditorContent(option)) &&
           question.correctAnswer
       ).length,
     [exam.questions]
   );
+
+  useEffect(() => {
+    if (promptRef.current && promptRef.current.innerHTML !== currentQuestion.content) {
+      promptRef.current.innerHTML = currentQuestion.content;
+    }
+
+    if (promptRef.current) {
+      promptRef.current.style.textAlign = currentQuestion.contentAlignment;
+    }
+
+    optionRefs.current.forEach((element, index) => {
+      if (!element) {
+        return;
+      }
+
+      const nextValue = currentQuestion.options[index] ?? "";
+      if (element.innerHTML !== nextValue) {
+        element.innerHTML = nextValue;
+      }
+      element.style.textAlign = currentQuestion.optionAlignments[index] ?? "left";
+    });
+  }, [currentQuestion]);
 
   const selectedClassroomId = exam.classroomIds[0] ?? "";
   const selectedClassroom = classrooms.find((classroom) => classroom.id === selectedClassroomId) ?? null;
@@ -288,6 +331,29 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
     const nextOptions = [...currentQuestion.options];
     nextOptions[optionIndex] = value;
     updateQuestion(selectedQuestionIndex, { options: nextOptions });
+  }
+
+  function getActiveEditableElement(): HTMLDivElement | null {
+    if (activeField.kind === "content") {
+      return promptRef.current;
+    }
+
+    return optionRefs.current[activeField.optionIndex ?? 0] ?? null;
+  }
+
+  function syncActiveFieldFromDom() {
+    const element = getActiveEditableElement();
+    if (!element) {
+      return;
+    }
+
+    const html = element.innerHTML === "<br>" ? "" : element.innerHTML;
+    if (activeField.kind === "content") {
+      updateQuestion(selectedQuestionIndex, { content: html });
+      return;
+    }
+
+    updateOption(activeField.optionIndex ?? 0, html);
   }
 
   function updateOptionAlignment(optionIndex: number, alignment: FieldAlignment) {
@@ -329,6 +395,11 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
   }
 
   function setActiveAlignment(alignment: FieldAlignment) {
+    const element = getActiveEditableElement();
+    if (element) {
+      element.style.textAlign = alignment;
+    }
+
     if (activeField.kind === "content") {
       updateQuestion(selectedQuestionIndex, { contentAlignment: alignment });
       return;
@@ -337,37 +408,30 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
     updateOptionAlignment(activeField.optionIndex ?? 0, alignment);
   }
 
+  function applyEditorCommand(command: string, value?: string) {
+    const element = getActiveEditableElement();
+    if (!element) {
+      return;
+    }
+
+    element.focus();
+    document.execCommand(command, false, value);
+    syncActiveFieldFromDom();
+  }
+
   function insertMathTemplate(template: MathTemplate) {
     if (!currentQuestion) {
       return;
     }
 
-    const field = activeField.kind === "content" ? promptRef.current : optionRefs.current[activeField.optionIndex ?? 0];
+    const field = getActiveEditableElement();
     if (!field) {
       return;
     }
 
-    const selectionStart = field.selectionStart ?? field.value.length;
-    const selectionEnd = field.selectionEnd ?? field.value.length;
-    const currentValue = activeField.kind === "content"
-      ? currentQuestion.content
-      : currentQuestion.options[activeField.optionIndex ?? 0] ?? "";
-    const insertValue = template.insert.replace(CURSOR_TOKEN, "");
-    const cursorIndexInTemplate = template.insert.indexOf(CURSOR_TOKEN);
-    const nextCursor = selectionStart + (cursorIndexInTemplate >= 0 ? cursorIndexInTemplate : insertValue.length);
-    const nextValue = `${currentValue.slice(0, selectionStart)}${insertValue}${currentValue.slice(selectionEnd)}`;
-
-    if (activeField.kind === "content") {
-      updateQuestion(selectedQuestionIndex, { content: nextValue });
-    } else {
-      updateOption(activeField.optionIndex ?? 0, nextValue);
-    }
-
-    requestAnimationFrame(() => {
-      const nextField = activeField.kind === "content" ? promptRef.current : optionRefs.current[activeField.optionIndex ?? 0];
-      nextField?.focus();
-      nextField?.setSelectionRange(nextCursor, nextCursor);
-    });
+    field.focus();
+    document.execCommand("insertText", false, template.insert);
+    syncActiveFieldFromDom();
   }
 
   return (
@@ -393,8 +457,8 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
           {exam.questions.map((question, index) => {
             const isSelected = index === selectedQuestionIndex;
             const isComplete = Boolean(
-              question.content.trim() &&
-              question.options.every((option) => option.trim()) &&
+              stripEditorContent(question.content) &&
+              question.options.every((option) => stripEditorContent(option)) &&
               question.correctAnswer
             );
 
@@ -585,25 +649,30 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                 </div>
 
                 <div className="question-editor-panel question-editor-panel-clean">
-                  <div className="editor-field">
-                    <label>Question Prompt</label>
-                    <textarea
-                      ref={promptRef}
-                      value={currentQuestion.content}
-                      onChange={(event) => updateQuestion(selectedQuestionIndex, { content: event.target.value })}
-                      onFocus={() => setActiveField({ kind: "content" })}
-                      className="editor-input editor-textarea editor-textarea-large"
-                      style={{ textAlign: currentQuestion.contentAlignment }}
-                      placeholder="Write the full question here. Use the math toolbar for formulas."
-                      rows={4}
-                    />
-                    <MathPreview value={currentQuestion.content} placeholder="Question preview" alignment={currentQuestion.contentAlignment} />
-                  </div>
+                  <div className="sat-toolbar-shell">
+                    <div className="sat-toolbar-row">
+                      <div className="sat-toolbar-group">
+                        <button type="button" className="sat-toolbar-button" onMouseDown={(event) => event.preventDefault()} onClick={() => applyEditorCommand("bold")} title="Bold">
+                          <Bold size={14} />
+                        </button>
+                        <button type="button" className="sat-toolbar-button" onMouseDown={(event) => event.preventDefault()} onClick={() => applyEditorCommand("italic")} title="Italic">
+                          <Italic size={14} />
+                        </button>
+                        <button type="button" className="sat-toolbar-button" onMouseDown={(event) => event.preventDefault()} onClick={() => applyEditorCommand("underline")} title="Underline">
+                          <Underline size={14} />
+                        </button>
+                      </div>
 
-                  <div className="editor-field">
-                    <div className="editor-field-toolbar">
-                      <label>Math Toolbar</label>
-                      <div className="editor-alignment-toolbar" role="toolbar" aria-label="Text alignment toolbar">
+                      <div className="sat-toolbar-group">
+                        <button type="button" className="sat-toolbar-button" onMouseDown={(event) => event.preventDefault()} onClick={() => applyEditorCommand("insertUnorderedList")} title="Bullet list">
+                          <List size={14} />
+                        </button>
+                        <button type="button" className="sat-toolbar-button" onMouseDown={(event) => event.preventDefault()} onClick={() => applyEditorCommand("insertOrderedList")} title="Numbered list">
+                          <ListOrdered size={14} />
+                        </button>
+                      </div>
+
+                      <div className="sat-toolbar-group">
                         {ALIGNMENT_OPTIONS.map((alignmentOption) => {
                           const AlignmentIcon = alignmentOption.icon;
 
@@ -611,38 +680,82 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                             <button
                               key={alignmentOption.value}
                               type="button"
-                              className={`editor-alignment-button ${getActiveAlignment() === alignmentOption.value ? "editor-alignment-button-active" : ""}`}
+                              className={`sat-toolbar-button ${getActiveAlignment() === alignmentOption.value ? "sat-toolbar-button-active" : ""}`}
+                              onMouseDown={(event) => event.preventDefault()}
                               onClick={() => setActiveAlignment(alignmentOption.value)}
+                              title={alignmentOption.label}
                             >
                               <AlignmentIcon size={14} />
-                              {alignmentOption.label}
                             </button>
                           );
                         })}
                       </div>
-                    </div>
-                    <div className="math-toolbar" role="toolbar" aria-label="Math input toolbar">
-                      {MATH_TEMPLATES.map((template) => (
-                        <button
-                          key={template.label}
-                          type="button"
-                          className="math-toolbar-button"
-                          onClick={() => insertMathTemplate(template)}
-                        >
-                          <span>{template.label}</span>
+
+                      <div className="sat-toolbar-group sat-toolbar-group-math-entry">
+                        <button type="button" className="sat-toolbar-insert-math" onMouseDown={(event) => event.preventDefault()} onClick={() => insertMathTemplate({ label: "Insert Math", insert: "()" })}>
+                          <span>f(x)</span>
+                          Insert Math
                         </button>
+                      </div>
+
+                      <div className="sat-toolbar-group">
+                        {PRIMARY_MATH_TEMPLATES.map((template) => (
+                          <button
+                            key={template.label}
+                            type="button"
+                            className="sat-toolbar-button sat-toolbar-button-math"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => insertMathTemplate(template)}
+                            title={template.label}
+                          >
+                            {template.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="sat-toolbar-row sat-toolbar-row-secondary">
+                      {SECONDARY_MATH_GROUPS.map((group) => (
+                        <div key={group.label} className="sat-toolbar-group sat-toolbar-group-labeled">
+                          <span className="sat-toolbar-group-label">{group.label}</span>
+                          {group.items.map((template) => (
+                            <button
+                              key={`${group.label}-${template.label}`}
+                              type="button"
+                              className="sat-toolbar-button sat-toolbar-button-math sat-toolbar-button-pill"
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() => insertMathTemplate(template)}
+                              title={template.label}
+                            >
+                              {template.label}
+                            </button>
+                          ))}
+                        </div>
                       ))}
                     </div>
-                    <p className="editor-settings-hint">Insert simple math symbols into the active field and choose left, center, or right alignment for the current prompt or option.</p>
+                  </div>
+
+                  <div className="editor-field">
+                    <label>Question Prompt</label>
+                    <div
+                      ref={promptRef}
+                      onFocus={() => setActiveField({ kind: "content" })}
+                      onInput={syncActiveFieldFromDom}
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="sat-rich-editor-surface sat-rich-editor-surface-question"
+                      data-placeholder="Write the full question here."
+                    />
+                    <p className="editor-settings-hint">SAT-style rich question field. Formatting and symbol buttons apply to the currently focused editor.</p>
                   </div>
 
                   <div className="editor-field">
                     <label>Answer Options</label>
                     <div className="editor-field-supporting">
-                      <span>{currentQuestion.options.filter((option) => option.trim()).length}/4 options filled</span>
+                      <span>{currentQuestion.options.filter((option) => stripEditorContent(option)).length}/4 options filled</span>
                       <span>{currentQuestion.correctAnswer ? `Correct answer: ${currentQuestion.correctAnswer}` : "Select the correct answer"}</span>
                     </div>
-                    <div className="exam-option-editor-list">
+                    <div className="exam-option-editor-grid">
                       {OPTION_LABELS.map((label, index) => {
                         const isSelected = currentQuestion.correctAnswer === label;
 
@@ -658,19 +771,17 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                               {isSelected ? <CheckCircle2 size={16} /> : <span className="exam-option-select-dot" />}
                             </button>
                             <div className="exam-option-input-block">
-                              <input
+                              <div
                                 ref={(element) => {
                                   optionRefs.current[index] = element;
                                 }}
-                                type="text"
-                                value={currentQuestion.options[index]}
-                                onChange={(event) => updateOption(index, event.target.value)}
                                 onFocus={() => setActiveField({ kind: "option", optionIndex: index })}
-                                className="editor-input"
-                                style={{ textAlign: currentQuestion.optionAlignments[index] ?? "left" }}
-                                placeholder={`Option ${label}`}
+                                onInput={syncActiveFieldFromDom}
+                                contentEditable
+                                suppressContentEditableWarning
+                                className="sat-rich-editor-surface sat-rich-editor-surface-option"
+                                data-placeholder={`Option ${label}`}
                               />
-                              <MathPreview value={currentQuestion.options[index]} placeholder={`Option ${label} preview`} alignment={currentQuestion.optionAlignments[index] ?? "left"} />
                             </div>
                           </div>
                         );
