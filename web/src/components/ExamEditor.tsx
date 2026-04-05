@@ -1,14 +1,17 @@
-import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Eye, RefreshCcw, Save, ShieldAlert, Users } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Clock3, RefreshCcw, Save, ShieldAlert, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { renderToString } from "katex";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
+
+type FieldAlignment = "left" | "center" | "right";
 
 type Question = {
   id: string;
   type: "multiple-choice";
   content: string;
+  contentAlignment: FieldAlignment;
   options: string[];
+  optionAlignments: FieldAlignment[];
   correctAnswer: string;
   points: number;
 };
@@ -48,7 +51,6 @@ type Student = {
 
 type MathTemplate = {
   label: string;
-  preview: string;
   insert: string;
 };
 
@@ -56,16 +58,33 @@ const TOTAL_QUESTIONS = 48;
 const OPTION_LABELS = ["A", "B", "C", "D"] as const;
 const CURSOR_TOKEN = "__CURSOR__";
 const MATH_TEMPLATES: MathTemplate[] = [
-  { label: "sqrt", preview: "\\sqrt{x}", insert: `$\\sqrt{${CURSOR_TOKEN}}$` },
-  { label: "frac", preview: "\\frac{a}{b}", insert: `$\\frac{${CURSOR_TOKEN}}{}$` },
-  { label: "power", preview: "x^{2}", insert: `$x^{${CURSOR_TOKEN}}$` },
-  { label: "integral", preview: "\\int x \\, dx", insert: `$\\int ${CURSOR_TOKEN} \\, dx$` },
-  { label: "sum", preview: "\\sum_{n=1}^{k}", insert: `$\\sum_{n=1}^{${CURSOR_TOKEN}}$` },
-  { label: "pi", preview: "\\pi", insert: `$\\pi$` },
-  { label: "theta", preview: "\\theta", insert: `$\\theta$` },
-  { label: "times", preview: "a \\times b", insert: `$\\times$` },
-  { label: "leq", preview: "x \\leq y", insert: `$\\leq$` },
-  { label: "geq", preview: "x \\geq y", insert: `$\\geq$` }
+  { label: "√", insert: `√(${CURSOR_TOKEN})` },
+  { label: "a/b", insert: `(${CURSOR_TOKEN})/()` },
+  { label: "x²", insert: `x^(${CURSOR_TOKEN})` },
+  { label: "∫", insert: `∫(${CURSOR_TOKEN}) dx` },
+  { label: "∑", insert: `∑(${CURSOR_TOKEN})` },
+  { label: "π", insert: `π` },
+  { label: "θ", insert: `θ` },
+  { label: "∞", insert: `∞` },
+  { label: "≈", insert: `≈` },
+  { label: "≠", insert: `≠` },
+  { label: "≤", insert: `≤` },
+  { label: "≥", insert: `≥` },
+  { label: "±", insert: `±` },
+  { label: "×", insert: `×` },
+  { label: "÷", insert: `÷` },
+  { label: "°", insert: `°` },
+  { label: "→", insert: `→` },
+  { label: "∠", insert: `∠` },
+  { label: "△", insert: `△` },
+  { label: "⊥", insert: `⊥` },
+  { label: "∥", insert: `∥` }
+];
+
+const ALIGNMENT_OPTIONS: Array<{ value: FieldAlignment; label: string; icon: typeof AlignLeft }> = [
+  { value: "left", label: "Left", icon: AlignLeft },
+  { value: "center", label: "Center", icon: AlignCenter },
+  { value: "right", label: "Right", icon: AlignRight }
 ];
 
 function generateExamCode(): string {
@@ -88,12 +107,17 @@ function createQuestion(index: number, source?: Partial<Question>): Question {
   const sourceOptions = Array.isArray(source?.options)
     ? source.options.map((option) => (typeof option === "string" ? option : ""))
     : [];
+  const optionAlignments = Array.isArray(source?.optionAlignments)
+    ? source.optionAlignments.map((alignment) => (alignment === "center" || alignment === "right" ? alignment : "left"))
+    : [];
 
   return {
     id: source?.id ?? `q-${index + 1}`,
     type: "multiple-choice",
     content: source?.content ?? "",
+    contentAlignment: source?.contentAlignment === "center" || source?.contentAlignment === "right" ? source.contentAlignment : "left",
     options: Array.from({ length: 4 }, (_, optionIndex) => sourceOptions[optionIndex] ?? ""),
+    optionAlignments: Array.from({ length: 4 }, (_, optionIndex) => optionAlignments[optionIndex] ?? "left"),
     correctAnswer: typeof source?.correctAnswer === "string" ? source.correctAnswer : "",
     points: 1
   };
@@ -130,32 +154,7 @@ function normalizeExamData(source?: Partial<ExamData> & { questions?: Partial<Qu
   };
 }
 
-function renderMath(text: string): Array<{ type: "text" | "math"; value: string }> {
-  const segments: Array<{ type: "text" | "math"; value: string }> = [];
-  const regex = /\$([^$]+)\$/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      segments.push({ type: "text", value: text.slice(lastIndex, match.index) });
-    }
-    segments.push({ type: "math", value: match[1] });
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    segments.push({ type: "text", value: text.slice(lastIndex) });
-  }
-
-  if (segments.length === 0) {
-    segments.push({ type: "text", value: text });
-  }
-
-  return segments;
-}
-
-function MathPreview(props: { value: string; placeholder: string }): JSX.Element | null {
+function MathPreview(props: { value: string; placeholder: string; alignment?: FieldAlignment }): JSX.Element | null {
   if (!props.value.trim()) {
     return null;
   }
@@ -163,48 +162,10 @@ function MathPreview(props: { value: string; placeholder: string }): JSX.Element
   return (
     <div className="math-render-preview">
       <span className="math-render-label">Preview</span>
-      <div className="math-render-surface">
-        {renderMath(props.value).map((segment, index) => {
-          if (segment.type === "math") {
-            return (
-              <span
-                key={`${segment.type}-${index}`}
-                className="math-render-fragment"
-                dangerouslySetInnerHTML={{
-                  __html: renderToString(segment.value, {
-                    displayMode: false,
-                    throwOnError: false,
-                    strict: "ignore"
-                  })
-                }}
-              />
-            );
-          }
-
-          return (
-            <span key={`${segment.type}-${index}`} className="math-render-text">
-              {segment.value || props.placeholder}
-            </span>
-          );
-        })}
+      <div className={`math-render-surface math-render-surface-${props.alignment ?? "left"}`}>
+        <span className="math-render-text">{props.value || props.placeholder}</span>
       </div>
     </div>
-  );
-}
-
-function MathToken(props: { expression: string }): JSX.Element {
-  return (
-    <span
-      className="math-token-fragment"
-      aria-hidden="true"
-      dangerouslySetInnerHTML={{
-        __html: renderToString(props.expression, {
-          displayMode: false,
-          throwOnError: false,
-          strict: "ignore"
-        })
-      }}
-    />
   );
 }
 
@@ -213,7 +174,6 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
-  const [previewMode, setPreviewMode] = useState(false);
   const [loading, setLoading] = useState(Boolean(props.examId));
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeField, setActiveField] = useState<{ kind: "content" | "option"; optionIndex?: number }>({ kind: "content" });
@@ -303,6 +263,14 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
   const liveEligibleCount = eligibleStudents.filter((student) => student.status === "in_progress").length;
   const flaggedEligibleCount = eligibleStudents.filter((student) => student.status === "flagged" || student.status === "terminated").length;
 
+  function getActiveAlignment(): FieldAlignment {
+    if (activeField.kind === "content") {
+      return currentQuestion.contentAlignment;
+    }
+
+    return currentQuestion.optionAlignments[activeField.optionIndex ?? 0] ?? "left";
+  }
+
   function updateExam(updates: Partial<ExamData>) {
     setExam((current) => ({ ...current, ...updates }));
   }
@@ -320,6 +288,12 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
     const nextOptions = [...currentQuestion.options];
     nextOptions[optionIndex] = value;
     updateQuestion(selectedQuestionIndex, { options: nextOptions });
+  }
+
+  function updateOptionAlignment(optionIndex: number, alignment: FieldAlignment) {
+    const nextAlignments = [...currentQuestion.optionAlignments];
+    nextAlignments[optionIndex] = alignment;
+    updateQuestion(selectedQuestionIndex, { optionAlignments: nextAlignments });
   }
 
   function moveSelection(direction: "previous" | "next") {
@@ -352,6 +326,15 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
 
   function saveExam() {
     props.onSave(normalizeExamData(exam));
+  }
+
+  function setActiveAlignment(alignment: FieldAlignment) {
+    if (activeField.kind === "content") {
+      updateQuestion(selectedQuestionIndex, { contentAlignment: alignment });
+      return;
+    }
+
+    updateOptionAlignment(activeField.optionIndex ?? 0, alignment);
   }
 
   function insertMathTemplate(template: MathTemplate) {
@@ -401,8 +384,8 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
             <strong>{completedCount}/{TOTAL_QUESTIONS}</strong>
           </div>
           <div className="exam-sidebar-stat">
-            <span>Live now</span>
-            <strong>{liveEligibleCount}</strong>
+            <span>Code</span>
+            <strong>{exam.code}</strong>
           </div>
         </div>
 
@@ -450,10 +433,6 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
             </div>
 
             <div className="exam-editor-toolbar-actions">
-              <button type="button" className="editor-toolbar-button" onClick={() => setPreviewMode((current) => !current)}>
-                <Eye size={16} />
-                {previewMode ? "Edit" : "Preview"}
-              </button>
               <button type="button" className="editor-toolbar-button editor-toolbar-button-primary" onClick={saveExam}>
                 <Save size={16} />
                 Save Exam
@@ -482,6 +461,23 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                     <RefreshCcw size={14} />
                     Regenerate
                   </button>
+                </div>
+                <div className="editor-access-stats">
+                  <div className="editor-access-stat">
+                    <Users size={12} />
+                    <strong>{eligibleStudents.length}</strong>
+                    <span>eligible</span>
+                  </div>
+                  <div className="editor-access-stat">
+                    <CheckCircle2 size={12} />
+                    <strong>{liveEligibleCount}</strong>
+                    <span>live</span>
+                  </div>
+                  <div className="editor-access-stat">
+                    <ShieldAlert size={12} />
+                    <strong>{flaggedEligibleCount}</strong>
+                    <span>alerts</span>
+                  </div>
                 </div>
               </div>
 
@@ -547,32 +543,6 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                 </p>
               </div>
 
-              <div className="editor-settings-card editor-settings-card-stats">
-                <label className="editor-settings-label">Live Stats</label>
-                <div className="editor-stats-row">
-                  <div className="editor-mini-stat">
-                    <Users size={14} />
-                    <div>
-                      <strong>{eligibleStudents.length}</strong>
-                      <span>eligible</span>
-                    </div>
-                  </div>
-                  <div className="editor-mini-stat">
-                    <CheckCircle2 size={14} />
-                    <div>
-                      <strong>{liveEligibleCount}</strong>
-                      <span>live now</span>
-                    </div>
-                  </div>
-                  <div className="editor-mini-stat">
-                    <ShieldAlert size={14} />
-                    <div>
-                      <strong>{flaggedEligibleCount}</strong>
-                      <span>attention</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -583,8 +553,6 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
               <section className="editor-section-card exam-loading-card">
                 <p className="editor-empty-title">Loading exam...</p>
               </section>
-            ) : previewMode ? (
-              <ExamPreview exam={exam} onClose={() => setPreviewMode(false)} />
             ) : currentQuestion ? (
               <section className="editor-section-card exam-focus-card exam-focus-card-modern">
                 {loadError ? <div className="alert-error exam-editor-inline-alert">{loadError}</div> : null}
@@ -625,14 +593,34 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                       onChange={(event) => updateQuestion(selectedQuestionIndex, { content: event.target.value })}
                       onFocus={() => setActiveField({ kind: "content" })}
                       className="editor-input editor-textarea editor-textarea-large"
+                      style={{ textAlign: currentQuestion.contentAlignment }}
                       placeholder="Write the full question here. Use the math toolbar for formulas."
                       rows={4}
                     />
-                    <MathPreview value={currentQuestion.content} placeholder="Question preview" />
+                    <MathPreview value={currentQuestion.content} placeholder="Question preview" alignment={currentQuestion.contentAlignment} />
                   </div>
 
                   <div className="editor-field">
-                    <label>Math Toolbar</label>
+                    <div className="editor-field-toolbar">
+                      <label>Math Toolbar</label>
+                      <div className="editor-alignment-toolbar" role="toolbar" aria-label="Text alignment toolbar">
+                        {ALIGNMENT_OPTIONS.map((alignmentOption) => {
+                          const AlignmentIcon = alignmentOption.icon;
+
+                          return (
+                            <button
+                              key={alignmentOption.value}
+                              type="button"
+                              className={`editor-alignment-button ${getActiveAlignment() === alignmentOption.value ? "editor-alignment-button-active" : ""}`}
+                              onClick={() => setActiveAlignment(alignmentOption.value)}
+                            >
+                              <AlignmentIcon size={14} />
+                              {alignmentOption.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                     <div className="math-toolbar" role="toolbar" aria-label="Math input toolbar">
                       {MATH_TEMPLATES.map((template) => (
                         <button
@@ -641,12 +629,11 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                           className="math-toolbar-button"
                           onClick={() => insertMathTemplate(template)}
                         >
-                          <MathToken expression={template.preview} />
                           <span>{template.label}</span>
                         </button>
                       ))}
                     </div>
-                    <p className="editor-settings-hint">Insert expressions into the active question or option field. Math renders in the preview immediately.</p>
+                    <p className="editor-settings-hint">Insert simple math symbols into the active field and choose left, center, or right alignment for the current prompt or option.</p>
                   </div>
 
                   <div className="editor-field">
@@ -680,9 +667,10 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                                 onChange={(event) => updateOption(index, event.target.value)}
                                 onFocus={() => setActiveField({ kind: "option", optionIndex: index })}
                                 className="editor-input"
+                                style={{ textAlign: currentQuestion.optionAlignments[index] ?? "left" }}
                                 placeholder={`Option ${label}`}
                               />
-                              <MathPreview value={currentQuestion.options[index]} placeholder={`Option ${label} preview`} />
+                              <MathPreview value={currentQuestion.options[index]} placeholder={`Option ${label} preview`} alignment={currentQuestion.optionAlignments[index] ?? "left"} />
                             </div>
                           </div>
                         );
@@ -693,67 +681,6 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
               </section>
             ) : null}
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function QuestionRenderer(props: { question: Question }): JSX.Element {
-  return (
-    <div className="question-preview-block">
-      <MathPreview value={props.question.content} placeholder="Question preview" />
-      <div className="question-option-list">
-        {props.question.options.map((option, index) => {
-          const label = OPTION_LABELS[index] || "";
-          const isCorrect = props.question.correctAnswer === label;
-
-          return (
-            <div key={label} className={`question-option-item ${isCorrect ? "question-option-item-correct" : ""}`}>
-              <span className="question-option-badge">{label}</span>
-              <div className="question-option-copy">
-                <MathPreview value={option} placeholder={`Option ${label}`} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function ExamPreview(props: { exam: ExamData; onClose: () => void }): JSX.Element {
-  return (
-    <div className="exam-preview exam-preview-clean">
-      <div className="preview-header preview-header-clean">
-        <div>
-          <p className="question-focus-kicker">Preview</p>
-          <h2>{props.exam.title}</h2>
-        </div>
-        <button onClick={props.onClose} className="editor-toolbar-button">Close Preview</button>
-      </div>
-
-      <div className="preview-content preview-content-clean">
-        <div className="preview-exam-header preview-exam-header-clean">
-          <div className="preview-meta preview-meta-clean">
-            <p>{props.exam.timeLimitMinutes} minutes</p>
-            <p>{TOTAL_QUESTIONS} questions</p>
-            <p>Code: {props.exam.code}</p>
-            <p>{props.exam.audienceScope === "all_students" ? "All students" : "Specific classroom"}</p>
-            <p>{props.exam.violationMode === "record" ? "Record only" : "Disqualify on first violation"}</p>
-          </div>
-        </div>
-
-        <div className="preview-questions preview-questions-clean">
-          {props.exam.questions.map((question, index) => (
-            <div key={question.id} className="preview-question preview-question-clean">
-              <div className="preview-question-header">
-                <span className="preview-question-number">Question {index + 1}</span>
-                <span className="preview-points">1 point</span>
-              </div>
-              <QuestionRenderer question={question} />
-            </div>
-          ))}
         </div>
       </div>
     </div>
