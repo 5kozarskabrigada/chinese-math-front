@@ -1,15 +1,15 @@
-import { ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Clock3, Eye, KeyRound, LayoutGrid, PenSquare, Rows3, Save, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Eye, KeyRound, Save } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 
 type Question = {
   id: string;
-  type: "multiple-choice" | "fill-blank" | "short-answer" | "multi-part";
+  type: "multiple-choice";
   content: string;
-  options?: string[];
-  correctAnswer: string | string[];
+  options: string[];
+  correctAnswer: string;
   points: number;
-  explanation?: string;
 };
 
 type ExamData = {
@@ -29,310 +29,359 @@ type ExamEditorProps = {
   onSave: (exam: ExamData) => void;
 };
 
-export function ExamEditor(props: ExamEditorProps): JSX.Element {
-  const [exam, setExam] = useState<ExamData>({
-    title: "Untitled Exam",
+const TOTAL_QUESTIONS = 48;
+const OPTION_LABELS = ["A", "B", "C", "D"] as const;
+
+function generateExamCode(): string {
+  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const digits = "23456789";
+  const all = `${letters}${digits}`;
+  const code = [
+    letters[Math.floor(Math.random() * letters.length)],
+    digits[Math.floor(Math.random() * digits.length)]
+  ];
+
+  while (code.length < 6) {
+    code.push(all[Math.floor(Math.random() * all.length)]);
+  }
+
+  return code.sort(() => Math.random() - 0.5).join("");
+}
+
+function createQuestion(index: number, source?: Partial<Question>): Question {
+  const sourceOptions = Array.isArray(source?.options)
+    ? source.options.map((option) => (typeof option === "string" ? option : ""))
+    : [];
+
+  return {
+    id: source?.id ?? `q-${index + 1}`,
+    type: "multiple-choice",
+    content: source?.content ?? "",
+    options: Array.from({ length: 4 }, (_, optionIndex) => sourceOptions[optionIndex] ?? ""),
+    correctAnswer: typeof source?.correctAnswer === "string" ? source.correctAnswer : "",
+    points: typeof source?.points === "number" ? source.points : 1
+  };
+}
+
+function createInitialExam(): ExamData {
+  return {
+    title: "Chinese Math Mock Test",
     code: generateExamCode(),
     isActive: false,
     timeLimitMinutes: 60,
     classroomIds: [],
-    questions: []
-  });
+    questions: Array.from({ length: TOTAL_QUESTIONS }, (_, index) => createQuestion(index))
+  };
+}
 
-  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
+function normalizeExamData(source?: Partial<ExamData> & { questions?: Partial<Question>[] }): ExamData {
+  const incomingQuestions = Array.isArray(source?.questions) ? source.questions : [];
+
+  return {
+    id: source?.id,
+    title: source?.title?.trim() || "Chinese Math Mock Test",
+    code: source?.code || generateExamCode(),
+    isActive: Boolean(source?.isActive),
+    timeLimitMinutes: typeof source?.timeLimitMinutes === "number" ? source.timeLimitMinutes : 60,
+    classroomIds: Array.isArray(source?.classroomIds) ? source.classroomIds : [],
+    questions: Array.from({ length: TOTAL_QUESTIONS }, (_, index) => createQuestion(index, incomingQuestions[index]))
+  };
+}
+
+export function ExamEditor(props: ExamEditorProps): JSX.Element {
+  const [exam, setExam] = useState<ExamData>(() => createInitialExam());
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
   const [previewMode, setPreviewMode] = useState(false);
+  const [loading, setLoading] = useState(Boolean(props.examId));
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const questionTypes: Array<{ type: Question["type"]; label: string; icon: JSX.Element }> = [
-    {
-      type: "multiple-choice",
-      label: "Multiple Choice",
-      icon: <CheckCircle2 size={18} />
-    },
-    {
-      type: "fill-blank",
-      label: "Fill in Blank",
-      icon: <Rows3 size={18} />
-    },
-    {
-      type: "short-answer",
-      label: "Short Answer",
-      icon: <PenSquare size={18} />
-    },
-    {
-      type: "multi-part",
-      label: "Multi-Part",
-      icon: <LayoutGrid size={18} />
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadExam() {
+      if (!props.examId || !props.auth) {
+        setLoading(false);
+        setLoadError(null);
+        return;
+      }
+
+      setLoading(true);
+      setLoadError(null);
+
+      try {
+        const exams = await apiRequest<ExamData[]>({ path: "/admin/exams", auth: props.auth });
+        const existingExam = exams.find((item) => item.id === props.examId);
+
+        if (!existingExam) {
+          throw new Error("Exam not found");
+        }
+
+        if (isMounted) {
+          setExam(normalizeExamData(existingExam));
+        }
+      } catch (error) {
+        if (isMounted) {
+          setLoadError(error instanceof Error ? error.message : "Failed to load exam");
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     }
-  ];
 
-  function generateExamCode(): string {
-    const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-    const digits = "23456789";
-    const all = `${letters}${digits}`;
-    const code = [
-      letters[Math.floor(Math.random() * letters.length)],
-      digits[Math.floor(Math.random() * digits.length)]
-    ];
+    void loadExam();
 
-    while (code.length < 6) {
-      code.push(all[Math.floor(Math.random() * all.length)]);
-    }
-
-    return code.sort(() => Math.random() - 0.5).join("");
-  }
-
-  function addQuestion(type: Question["type"]) {
-    const newQuestion: Question = {
-      id: `q-${Date.now()}`,
-      type,
-      content: "",
-      correctAnswer: type === "multiple-choice" ? "" : [],
-      points: 10,
-      ...(type === "multiple-choice" && { options: ["", "", "", ""] })
+    return () => {
+      isMounted = false;
     };
+  }, [props.auth, props.examId]);
 
-    setExam(prev => ({
-      ...prev,
-      questions: [...prev.questions, newQuestion]
-    }));
-    setSelectedQuestionIndex(exam.questions.length);
+  const currentQuestion = exam.questions[selectedQuestionIndex];
+  const completedCount = useMemo(
+    () =>
+      exam.questions.filter(
+        (question) =>
+          question.content.trim() &&
+          question.options.every((option) => option.trim()) &&
+          question.correctAnswer
+      ).length,
+    [exam.questions]
+  );
+
+  function updateExam(updates: Partial<ExamData>) {
+    setExam((current) => ({ ...current, ...updates }));
   }
 
   function updateQuestion(index: number, updates: Partial<Question>) {
-    setExam(prev => ({
-      ...prev,
-      questions: prev.questions.map((q, i) => 
-        i === index ? { ...q, ...updates } : q
+    setExam((current) => ({
+      ...current,
+      questions: current.questions.map((question, questionIndex) =>
+        questionIndex === index ? { ...question, ...updates } : question
       )
     }));
   }
 
-  function deleteQuestion(index: number) {
-    setExam(prev => ({
-      ...prev,
-      questions: prev.questions.filter((_, i) => i !== index)
-    }));
-    setSelectedQuestionIndex(null);
+  function updateOption(optionIndex: number, value: string) {
+    const nextOptions = [...currentQuestion.options];
+    nextOptions[optionIndex] = value;
+    updateQuestion(selectedQuestionIndex, { options: nextOptions });
   }
 
-  function moveQuestion(index: number, direction: "up" | "down") {
-    if (direction === "up" && index === 0) return;
-    if (direction === "down" && index === exam.questions.length - 1) return;
+  function moveSelection(direction: "previous" | "next") {
+    setSelectedQuestionIndex((current) => {
+      if (direction === "previous") {
+        return Math.max(0, current - 1);
+      }
 
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    const newQuestions = [...exam.questions];
-    [newQuestions[index], newQuestions[newIndex]] = [newQuestions[newIndex], newQuestions[index]];
+      return Math.min(TOTAL_QUESTIONS - 1, current + 1);
+    });
+  }
 
-    setExam(prev => ({ ...prev, questions: newQuestions }));
-    setSelectedQuestionIndex(newIndex);
+  function saveExam() {
+    props.onSave(normalizeExamData(exam));
   }
 
   return (
-    <div className="exam-editor">
-      {/* Left Sidebar */}
-      <div className="exam-editor-sidebar">
-        <div className="exam-editor-sidebar-header">
-          <h2>Exam Editor</h2>
-          <span className={`exam-status-badge ${exam.isActive ? 'active' : 'inactive'}`}>
-            {exam.isActive ? 'Active' : 'Draft'}
-          </span>
+    <div className="exam-editor exam-editor-clean">
+      <aside className="exam-editor-sidebar exam-editor-sidebar-clean">
+        <div className="exam-editor-sidebar-header exam-editor-sidebar-header-clean">
+          <p className="exam-sidebar-eyebrow">Exam Builder</p>
+          <h2>Fixed 48-question layout</h2>
+          <p className="exam-sidebar-copy">A clean multiple-choice flow with one question active at a time.</p>
         </div>
-        
-        <nav className="exam-editor-nav">
-          <button className="nav-button active">
-            <LayoutGrid size={18} />
-            <span>Overview</span>
-          </button>
 
-          <div className="nav-section-title">
-            Question Types
+        <div className="exam-sidebar-stats">
+          <div className="exam-sidebar-stat">
+            <span>Completed</span>
+            <strong>{completedCount}/{TOTAL_QUESTIONS}</strong>
           </div>
+          <div className="exam-sidebar-stat">
+            <span>Current</span>
+            <strong>{selectedQuestionIndex + 1}/{TOTAL_QUESTIONS}</strong>
+          </div>
+        </div>
 
-          {questionTypes.map((questionType) => (
-            <button
-              key={questionType.type}
-              type="button"
-              className="question-type-button"
-              onClick={() => addQuestion(questionType.type)}
-            >
-              {questionType.icon}
-              <span>{questionType.label}</span>
-            </button>
-          ))}
-        </nav>
-      </div>
+        <div className="exam-question-grid" role="navigation" aria-label="Question navigation">
+          {exam.questions.map((question, index) => {
+            const isSelected = index === selectedQuestionIndex;
+            const isComplete = Boolean(
+              question.content.trim() &&
+              question.options.every((option) => option.trim()) &&
+              question.correctAnswer
+            );
 
-      {/* Main Content Area */}
-      <div className="exam-editor-main">
-        {/* Top Bar */}
-        <div className="exam-editor-header">
-          <div className="exam-editor-top-bar">
-            <div className="exam-editor-toolbar-left">
+            return (
+              <button
+                key={question.id}
+                type="button"
+                className={`exam-question-chip ${isSelected ? "exam-question-chip-selected" : ""} ${isComplete ? "exam-question-chip-complete" : ""}`}
+                onClick={() => setSelectedQuestionIndex(index)}
+              >
+                {String(index + 1).padStart(2, "0")}
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+
+      <div className="exam-editor-main exam-editor-main-clean">
+        <div className="exam-editor-header exam-editor-header-clean">
+          <div className="exam-editor-top-bar exam-editor-top-bar-clean">
+            <div className="exam-editor-toolbar-left exam-editor-toolbar-left-clean">
               <button onClick={props.onBack} className="back-button">
                 <ArrowLeft size={18} />
                 Back
               </button>
-              <span className="exam-title-text">{exam.title || "Untitled Exam"}</span>
+              <div className="exam-editor-heading-block">
+                <input
+                  type="text"
+                  value={exam.title}
+                  onChange={(event) => updateExam({ title: event.target.value })}
+                  className="exam-title-input-inline"
+                  placeholder="Exam title"
+                />
+                <p className="exam-title-supporting">48 multiple-choice questions, 1 point each.</p>
+              </div>
             </div>
-            
+
             <div className="exam-editor-toolbar-actions">
-              <button 
-                type="button"
-                className="editor-toolbar-button"
-                onClick={() => setPreviewMode(!previewMode)}
-              >
+              <button type="button" className="editor-toolbar-button" onClick={() => setPreviewMode((current) => !current)}>
                 <Eye size={16} />
-                Preview
+                {previewMode ? "Edit" : "Preview"}
               </button>
-              
-              <button 
-                type="button"
-                className="editor-toolbar-button editor-toolbar-button-primary"
-                onClick={() => props.onSave(exam)}
-              >
+              <button type="button" className="editor-toolbar-button editor-toolbar-button-primary" onClick={saveExam}>
                 <Save size={16} />
                 Save Exam
               </button>
             </div>
           </div>
-          
-          {/* Control Panel */}
-          <div className="exam-editor-control-wrap">
-            <div className={`editor-control-panel ${exam.isActive ? 'editor-control-panel-active' : ''}`}>
-              <div className="editor-control-row">
-                <div className="editor-control-group">
+
+          <div className="exam-editor-control-wrap exam-editor-control-wrap-clean">
+            <div className="editor-control-panel editor-control-panel-clean">
+              <div className="editor-control-row editor-control-row-clean">
+                <div className="editor-control-group editor-control-group-clean">
                   <label className="toggle-switch">
                     <input
                       type="checkbox"
                       checked={exam.isActive}
-                      onChange={(e) => setExam(prev => ({ ...prev, isActive: e.target.checked }))}
+                      onChange={(event) => updateExam({ isActive: event.target.checked })}
                     />
                     <span className="toggle-slider"></span>
                   </label>
-                  <span className="editor-control-state">
-                    {exam.isActive ? 'Active' : 'Inactive'}
-                  </span>
+                  <span className="editor-control-state">{exam.isActive ? "Published" : "Draft"}</span>
                 </div>
-                
-                <div className="editor-control-divider"></div>
-                
-                <div className="editor-control-group">
-                  <Clock3 size={18} />
+
+                <div className="editor-control-group editor-control-group-clean">
+                  <Clock3 size={16} />
                   <input
                     type="number"
                     value={exam.timeLimitMinutes}
-                    onChange={(e) => setExam(prev => ({ ...prev, timeLimitMinutes: parseInt(e.target.value) || 60 }))}
+                    onChange={(event) => updateExam({ timeLimitMinutes: parseInt(event.target.value, 10) || 60 })}
                     className="editor-time-input"
                     min="1"
                   />
                   <span className="editor-control-copy">minutes</span>
                 </div>
-                
-                <div className="editor-control-divider"></div>
-                
-                <div className="editor-control-group">
-                  <KeyRound size={18} />
-                  <span className="editor-control-label">
-                    Code:
-                  </span>
-                  <span className={`editor-code-chip ${exam.isActive ? 'editor-code-chip-active' : ''}`}>
-                    {exam.code}
-                  </span>
+
+                <div className="editor-control-group editor-control-group-clean">
+                  <KeyRound size={16} />
+                  <span className="editor-code-chip editor-code-chip-clean">{exam.code}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Workspace */}
-        <div className="exam-editor-workspace">
-          <div className="exam-editor-canvas">
-            {!previewMode ? (
-              <>
-                {/* Questions Section */}
-                <section className="editor-section-card">
-                  <div className="editor-section-header">
-                    <h3 className="editor-section-title">
-                      Questions ({exam.questions.length})
-                    </h3>
-                    <div className="editor-summary-chip">
-                      Total: {exam.questions.reduce((sum, q) => sum + q.points, 0)} pts
+        <div className="exam-editor-workspace exam-editor-workspace-clean">
+          <div className="exam-editor-canvas exam-editor-canvas-clean">
+            {loading ? (
+              <section className="editor-section-card exam-loading-card">
+                <p className="editor-empty-title">Loading exam...</p>
+              </section>
+            ) : previewMode ? (
+              <ExamPreview exam={exam} onClose={() => setPreviewMode(false)} />
+            ) : currentQuestion ? (
+              <section className="editor-section-card exam-focus-card">
+                {loadError ? <div className="alert-error exam-editor-inline-alert">{loadError}</div> : null}
+
+                <div className="question-focus-header">
+                  <div>
+                    <p className="question-focus-kicker">Question {String(selectedQuestionIndex + 1).padStart(2, "0")}</p>
+                    <h3 className="editor-section-title">Multiple Choice</h3>
+                    <p className="question-focus-copy">Keep phrasing short and direct. Each item has four options and one correct answer.</p>
+                  </div>
+                  <div className="question-focus-nav">
+                    <button
+                      type="button"
+                      className="question-nav-button"
+                      onClick={() => moveSelection("previous")}
+                      disabled={selectedQuestionIndex === 0}
+                    >
+                      <ChevronLeft size={16} />
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      className="question-nav-button"
+                      onClick={() => moveSelection("next")}
+                      disabled={selectedQuestionIndex === TOTAL_QUESTIONS - 1}
+                    >
+                      Next
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="question-editor-panel question-editor-panel-clean">
+                  <div className="editor-field">
+                    <label>Question Prompt</label>
+                    <textarea
+                      value={currentQuestion.content}
+                      onChange={(event) => updateQuestion(selectedQuestionIndex, { content: event.target.value })}
+                      className="editor-input editor-textarea editor-textarea-large"
+                      placeholder="Write the full question here"
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="editor-field">
+                    <label>Answer Options</label>
+                    <div className="exam-option-editor-list">
+                      {OPTION_LABELS.map((label, index) => {
+                        const isSelected = currentQuestion.correctAnswer === label;
+
+                        return (
+                          <div key={label} className={`exam-option-editor ${isSelected ? "exam-option-editor-selected" : ""}`}>
+                            <button
+                              type="button"
+                              className={`exam-option-select ${isSelected ? "exam-option-select-selected" : ""}`}
+                              onClick={() => updateQuestion(selectedQuestionIndex, { correctAnswer: label })}
+                              aria-label={`Mark option ${label} as correct`}
+                            >
+                              <span className="editor-option-badge">{label}</span>
+                              {isSelected ? <CheckCircle2 size={16} /> : <span className="exam-option-select-dot" />}
+                            </button>
+                            <input
+                              type="text"
+                              value={currentQuestion.options[index]}
+                              onChange={(event) => updateOption(index, event.target.value)}
+                              className="editor-input"
+                              placeholder={`Option ${label}`}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {exam.questions.length === 0 ? (
-                    <div className="editor-empty-state">
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="editor-empty-icon">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                      </svg>
-                      <p className="editor-empty-title">No questions yet</p>
-                      <p className="editor-empty-copy">Use the sidebar to add questions and start structuring the exam.</p>
-                    </div>
-                  ) : (
-                    <div className="question-stack">
-                      {exam.questions.map((question, index) => (
-                        <div
-                          key={question.id}
-                          onClick={() => setSelectedQuestionIndex(selectedQuestionIndex === index ? null : index)}
-                          className={`question-list-card ${selectedQuestionIndex === index ? 'question-list-card-selected' : ''}`}
-                        >
-                          <div className="question-list-meta">
-                            <span className={`question-number-pill ${selectedQuestionIndex === index ? 'question-number-pill-selected' : ''}`}>
-                              Q{index + 1}
-                            </span>
-                            <span className="question-type-copy">{question.type.replace('-', ' ').replace(/\b\w/g, (value) => value.toUpperCase())}</span>
-                            <span className={`question-points-pill ${selectedQuestionIndex === index ? 'question-points-pill-selected' : ''}`}>
-                              {question.points} pts
-                            </span>
-                          </div>
-                          
-                          <QuestionRenderer question={question} />
-
-                          {selectedQuestionIndex === index && (
-                            <div className="question-editor-wrap" onClick={(e) => e.stopPropagation()}>
-                              <QuestionEditor
-                                question={question}
-                                onChange={(updates: Partial<Question>) => updateQuestion(index, updates)}
-                              />
-                              
-                              <div className="question-action-row">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); moveQuestion(index, "up"); }}
-                                  disabled={index === 0}
-                                  className="question-action-button"
-                                >
-                                  <ChevronUp size={16} />
-                                  Move Up
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); moveQuestion(index, "down"); }}
-                                  disabled={index === exam.questions.length - 1}
-                                  className="question-action-button"
-                                >
-                                  <ChevronDown size={16} />
-                                  Move Down
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); deleteQuestion(index); }}
-                                  className="question-action-button question-action-button-danger"
-                                >
-                                  <Trash2 size={16} />
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </section>
-              </>
-            ) : (
-              <ExamPreview exam={exam} onClose={() => setPreviewMode(false)} />
-            )}
+                  <div className="question-editor-footer-clean">
+                    <span>{currentQuestion.options.filter((option) => option.trim()).length}/4 options filled</span>
+                    <span>{currentQuestion.correctAnswer ? `Correct answer: ${currentQuestion.correctAnswer}` : "Select the correct answer"}</span>
+                  </div>
+                </div>
+              </section>
+            ) : null}
           </div>
         </div>
       </div>
@@ -340,192 +389,57 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
   );
 }
 
-// Question Renderer Component
 function QuestionRenderer({ question }: { question: Question }): JSX.Element {
   return (
     <div className="question-preview-block">
       <div className="question-preview-content">
         {question.content || <span className="question-preview-placeholder">(Empty question)</span>}
       </div>
-      
-      {question.type === "multiple-choice" && question.options && (
-        <div className="question-option-list">
-          {question.options.map((option, idx) => (
-            <div key={idx} className="question-option-item">
-              <span className="question-option-badge">
-                {String.fromCharCode(65 + idx)}
-              </span>
+      <div className="question-option-list">
+        {question.options.map((option, index) => {
+          const label = OPTION_LABELS[index] || "";
+          const isCorrect = question.correctAnswer === label;
+
+          return (
+            <div key={label} className={`question-option-item ${isCorrect ? "question-option-item-correct" : ""}`}>
+              <span className="question-option-badge">{label}</span>
               <span className="question-option-copy">
                 {option || <span className="question-preview-placeholder">(Empty option)</span>}
               </span>
             </div>
-          ))}
-        </div>
-      )}
-
-      {question.type === "fill-blank" && (
-        <div className="question-blank-wrap">
-          <div className="question-blank-line">
-            _________________
-          </div>
-        </div>
-      )}
-
-      {question.type === "short-answer" && (
-        <div className="question-answer-space-wrap">
-          <div className="question-answer-space">
-            [Answer space]
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Question Editor Component
-function QuestionEditor({ question, onChange }: { question: Question; onChange: (updates: Partial<Question>) => void }): JSX.Element {
-  return (
-    <div className="question-editor-panel" onClick={(e) => e.stopPropagation()}>
-      <div className="editor-field">
-        <label>Question Content</label>
-        <textarea
-          value={question.content}
-          onChange={(e) => onChange({ content: e.target.value })}
-          onClick={(e) => e.stopPropagation()}
-          onFocus={(e) => e.stopPropagation()}
-          className="editor-input editor-textarea editor-textarea-large"
-          placeholder="Enter question text..."
-          rows={4}
-        />
-      </div>
-
-      {question.type === "multiple-choice" && (
-        <div className="editor-field">
-          <label>Options</label>
-          {question.options?.map((option, idx) => (
-            <div key={idx} className="editor-option-row">
-              <span className="editor-option-badge">
-                {String.fromCharCode(65 + idx)}
-              </span>
-              <input
-                type="text"
-                value={option}
-                onChange={(e) => {
-                  const newOptions = [...(question.options || [])];
-                  newOptions[idx] = e.target.value;
-                  onChange({ options: newOptions });
-                }}
-                onClick={(e) => e.stopPropagation()}
-                onFocus={(e) => e.stopPropagation()}
-                className="editor-input"
-                placeholder={`Option ${String.fromCharCode(65 + idx)}`}
-              />
-            </div>
-          ))}
-          
-          <div className="editor-field editor-field-spaced">
-            <label>Correct Answer</label>
-            <select
-              value={question.correctAnswer as string}
-              onChange={(e) => onChange({ correctAnswer: e.target.value })}
-              onClick={(e) => e.stopPropagation()}
-              onFocus={(e) => e.stopPropagation()}
-              className="editor-input editor-select"
-            >
-              <option value="">Select correct answer</option>
-              {question.options?.map((_, idx) => (
-                <option key={idx} value={String.fromCharCode(65 + idx)}>
-                  Option {String.fromCharCode(65 + idx)}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
-
-      {question.type === "fill-blank" && (
-        <div className="editor-field">
-          <label>Accepted Answer(s)</label>
-          <input
-            type="text"
-            value={Array.isArray(question.correctAnswer) ? question.correctAnswer.join(", ") : question.correctAnswer}
-            onChange={(e) => onChange({ correctAnswer: e.target.value.split(",").map(s => s.trim()) })}
-            onClick={(e) => e.stopPropagation()}
-            onFocus={(e) => e.stopPropagation()}
-            className="editor-input"
-            placeholder="Enter accepted answers (comma-separated)"
-          />
-        </div>
-      )}
-
-      {question.type === "short-answer" && (
-        <div className="editor-field">
-          <label>Model Answer</label>
-          <textarea
-            value={question.correctAnswer as string}
-            onChange={(e) => onChange({ correctAnswer: e.target.value })}
-            onClick={(e) => e.stopPropagation()}
-            onFocus={(e) => e.stopPropagation()}
-            className="editor-input editor-textarea"
-            placeholder="Enter model answer..."
-            rows={3}
-          />
-        </div>
-      )}
-
-      <div className="editor-field">
-        <label>Points</label>
-        <input
-          type="number"
-          value={question.points}
-          onChange={(e) => onChange({ points: parseInt(e.target.value) || 0 })}
-          onClick={(e) => e.stopPropagation()}
-          onFocus={(e) => e.stopPropagation()}
-          min="0"
-          className="editor-input editor-points-input"
-        />
-      </div>
-
-      <div className="editor-field">
-        <label>Explanation (Optional)</label>
-        <textarea
-          value={question.explanation || ""}
-          onChange={(e) => onChange({ explanation: e.target.value })}
-          onClick={(e) => e.stopPropagation()}
-          onFocus={(e) => e.stopPropagation()}
-          className="editor-input editor-textarea"
-          placeholder="Add solution explanation..."
-          rows={3}
-        />
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// Preview Component
 function ExamPreview({ exam, onClose }: { exam: ExamData; onClose: () => void }): JSX.Element {
   return (
-    <div className="exam-preview">
-      <div className="preview-header">
-        <h2>Preview Mode</h2>
-        <button onClick={onClose} className="close-preview-btn">Close Preview</button>
+    <div className="exam-preview exam-preview-clean">
+      <div className="preview-header preview-header-clean">
+        <div>
+          <p className="question-focus-kicker">Preview</p>
+          <h2>{exam.title}</h2>
+        </div>
+        <button onClick={onClose} className="editor-toolbar-button">Close Preview</button>
       </div>
-      
-      <div className="preview-content">
-        <div className="preview-exam-header">
-          <h1>{exam.title}</h1>
-          <div className="preview-meta">
-            <p>Time Limit: {exam.timeLimitMinutes} minutes</p>
-            <p>Total Points: {exam.questions.reduce((sum, q) => sum + q.points, 0)}</p>
+
+      <div className="preview-content preview-content-clean">
+        <div className="preview-exam-header preview-exam-header-clean">
+          <div className="preview-meta preview-meta-clean">
+            <p>{exam.timeLimitMinutes} minutes</p>
+            <p>{TOTAL_QUESTIONS} questions</p>
+            <p>Code: {exam.code}</p>
           </div>
         </div>
 
-        <div className="preview-questions">
+        <div className="preview-questions preview-questions-clean">
           {exam.questions.map((question, index) => (
-            <div key={question.id} className="preview-question">
+            <div key={question.id} className="preview-question preview-question-clean">
               <div className="preview-question-header">
                 <span className="preview-question-number">Question {index + 1}</span>
-                <span className="preview-points">[{question.points} points]</span>
+                <span className="preview-points">1 point</span>
               </div>
               <QuestionRenderer question={question} />
             </div>

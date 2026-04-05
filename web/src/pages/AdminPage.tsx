@@ -1133,65 +1133,36 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                         <p>Create your first exam to get started</p>
                       </div>
                     ) : (
-                      <div className="exams-grid">
+                      <div className="exams-grid exams-grid-minimal">
                         {exams.map((exam) => (
-                          <div 
-                            key={exam.id} 
-                            className="exam-card"
+                          <div
+                            key={exam.id}
+                            className="exam-card exam-card-minimal"
                             onClick={() => navigate(`/admin/exams/edit/${exam.id}`)}
                           >
-                            <div className="exam-card-header">
-                              <div className="exam-card-heading">
-                                <p className="exam-card-kicker">Mathematics Exam</p>
-                                <h3 className="exam-card-title">{exam.title}</h3>
-                              </div>
+                            <div className="exam-card-header exam-card-header-minimal">
+                              <p className="exam-card-kicker">Mathematics Exam</p>
                               <div className={`exam-status ${exam.isActive ? 'status-active' : 'status-inactive'}`}>
-                                {exam.isActive ? 'Active' : 'Draft'}
+                                {exam.isActive ? 'Live' : 'Draft'}
                               </div>
                             </div>
 
-                            <div className={`exam-code-panel ${exam.isActive ? 'exam-code-panel-active' : ''}`}>
-                              <span className="exam-code-label">Access Code</span>
-                              <span className="exam-card-code">{exam.code}</span>
+                            <h3 className="exam-card-title exam-card-title-minimal">{exam.title}</h3>
+
+                            <div className="exam-card-meta-row">
+                              <span className="exam-card-meta-chip">{exam.code}</span>
+                              <span className="exam-card-meta-chip">48 Questions</span>
+                              <span className="exam-card-meta-chip">{exam.timeLimitMinutes} min</span>
+                              <span className="exam-card-meta-chip">
+                                {exam.classroomIds && exam.classroomIds.length > 0
+                                  ? `${exam.classroomIds.length} classroom${exam.classroomIds.length === 1 ? "" : "s"}`
+                                  : "Unassigned"}
+                              </span>
                             </div>
 
                             <p className="exam-card-summary">
-                              Structured mathematics assessment with timed delivery and classroom assignment controls.
+                              48 fixed multiple-choice questions with a streamlined delivery flow and controlled classroom assignment.
                             </p>
-                            
-                            <div className="exam-card-details">
-                              <div className="exam-detail-item exam-metric-pill">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <circle cx="12" cy="12" r="10"/>
-                                  <polyline points="12 6 12 12 16 14"/>
-                                </svg>
-                                <span>{exam.timeLimitMinutes} min</span>
-                              </div>
-                              <div className="exam-detail-item exam-metric-pill">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 016.5 22H20M20 17V22M20 17l-7-7M20 17H10a2 2 0 01-2-2V5"/>
-                                </svg>
-                                <span>Math Set</span>
-                              </div>
-                              {exam.classroomIds && exam.classroomIds.length > 0 ? (
-                                <div className="exam-detail-item exam-metric-pill">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                                  </svg>
-                                  <span>{exam.classroomIds.length} classroom{exam.classroomIds.length === 1 ? '' : 's'}</span>
-                                </div>
-                              ) : (
-                                <div className="exam-detail-item exam-metric-pill exam-metric-pill-muted">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M12 20h9"/>
-                                    <path d="M12 4h9"/>
-                                    <path d="M4 9h16"/>
-                                    <path d="M4 15h16"/>
-                                  </svg>
-                                  <span>Unassigned</span>
-                                </div>
-                              )}
-                            </div>
 
                             <div className="exam-card-actions" onClick={(e) => e.stopPropagation()}>
                               <button className="exam-action-btn exam-edit-btn" onClick={() => navigate(`/admin/exams/edit/${exam.id}`)}>
@@ -1236,26 +1207,22 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
               </div>
 
               <div className="content-area">
-                <div className="student-summary-grid">
-                  <div className="student-summary-card">
-                    <p className="student-summary-label">Total roster</p>
-                    <p className="student-summary-value">{students.length}</p>
-                    <p className="student-summary-note">Students currently available in the system</p>
+                <div className="student-summary-strip">
+                  <div className="student-summary-pill">
+                    <span className="student-summary-pill-label">Roster</span>
+                    <strong>{students.length}</strong>
                   </div>
-                  <div className="student-summary-card">
-                    <p className="student-summary-label">Active now</p>
-                    <p className="student-summary-value">{activeStudentCount}</p>
-                    <p className="student-summary-note">Live student sessions currently marked active</p>
+                  <div className="student-summary-pill">
+                    <span className="student-summary-pill-label">Active</span>
+                    <strong>{activeStudentCount}</strong>
                   </div>
-                  <div className="student-summary-card">
-                    <p className="student-summary-label">Camera verified</p>
-                    <p className="student-summary-value">{verifiedStudentCount}</p>
-                    <p className="student-summary-note">Students who completed camera verification</p>
+                  <div className="student-summary-pill">
+                    <span className="student-summary-pill-label">Verified</span>
+                    <strong>{verifiedStudentCount}</strong>
                   </div>
-                  <div className="student-summary-card student-summary-card-alert">
-                    <p className="student-summary-label">Needs attention</p>
-                    <p className="student-summary-value">{attentionStudentCount}</p>
-                    <p className="student-summary-note">Flagged or terminated sessions that need review</p>
+                  <div className="student-summary-pill student-summary-pill-alert">
+                    <span className="student-summary-pill-label">Attention</span>
+                    <strong>{attentionStudentCount}</strong>
                   </div>
                 </div>
 

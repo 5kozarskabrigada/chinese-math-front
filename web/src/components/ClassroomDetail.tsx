@@ -80,6 +80,11 @@ export function ClassroomDetail(props: ClassroomDetailProps): JSX.Element {
     return available.filter(s => s.name.toLowerCase().includes(query) || s.id.toLowerCase().includes(query));
   }, [allUsers, data?.students, addStudentSearch]);
 
+  const selectedStudentRecord = useMemo(
+    () => allUsers.find((student) => student.id === selectedStudentToAdd) ?? null,
+    [allUsers, selectedStudentToAdd]
+  );
+
   async function handleAddStudent() {
     if (!selectedStudentToAdd) {
       setAlertModal({ show: true, message: "Please select a student" });
@@ -195,46 +200,61 @@ export function ClassroomDetail(props: ClassroomDetailProps): JSX.Element {
       {/* Add Student Modal */}
       {isAddModalOpen && (
         <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content classroom-picker-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Add Student to Classroom</h3>
+              <div>
+                <h3 className="modal-title">Add Student to Classroom</h3>
+                <p className="classroom-picker-subtitle">Search the roster and choose one student to place in this classroom.</p>
+              </div>
               <button className="modal-close" onClick={() => setIsAddModalOpen(false)}>
                 ×
               </button>
             </div>
-            <div className="modal-body">
-              <div className="form-group">
+            <div className="modal-body classroom-picker-body">
+              <div className="form-group classroom-picker-search-group">
                 <label>Search Students</label>
                 <input
                   type="text"
                   value={addStudentSearch}
                   onChange={(e) => setAddStudentSearch(e.target.value)}
-                  placeholder="Type to search students..."
+                  placeholder="Search by student name or username"
                   className="form-input"
                   autoFocus
                 />
               </div>
-              <div className="form-group">
-                <label>Select Student</label>
-                <select
-                  value={selectedStudentToAdd}
-                  onChange={(e) => setSelectedStudentToAdd(e.target.value)}
-                  className="form-select"
-                  size={Math.min(availableStudents.length + 1, 8)}
-                  style={{ height: "auto" }}
-                >
-                  <option value="">-- Select a student --</option>
-                  {availableStudents.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="classroom-picker-results-header">
+                <span className="classroom-picker-results-label">Available students</span>
+                <span className="classroom-picker-results-count">{availableStudents.length}</span>
+              </div>
+              <div className="classroom-picker-results">
                 {availableStudents.length === 0 && (
-                  <p className="hint-text">
+                  <p className="hint-text classroom-picker-empty">
                     {addStudentSearch ? "No matching students found" : "All students are already enrolled"}
                   </p>
                 )}
+                {availableStudents.map((student) => {
+                  const isSelected = selectedStudentToAdd === student.id;
+
+                  return (
+                    <button
+                      key={student.id}
+                      type="button"
+                      className={`classroom-picker-item ${isSelected ? "classroom-picker-item-selected" : ""}`}
+                      onClick={() => setSelectedStudentToAdd(student.id)}
+                    >
+                      <div className="classroom-picker-item-copy">
+                        <span className="classroom-picker-name">{student.name}</span>
+                        <span className="classroom-picker-id">{student.id}</span>
+                      </div>
+                      <span className="classroom-picker-state">{isSelected ? "Selected" : "Choose"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="classroom-picker-selection-bar">
+                <span className="classroom-picker-selection-label">Current selection</span>
+                <strong>{selectedStudentRecord ? selectedStudentRecord.name : "No student selected"}</strong>
+                <span>{selectedStudentRecord ? selectedStudentRecord.id : "Choose a student from the list above."}</span>
               </div>
             </div>
             <div className="modal-footer">
