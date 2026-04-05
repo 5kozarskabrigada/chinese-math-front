@@ -516,7 +516,10 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                                 aria-label={`Mark option ${label} as correct`}
                               >
                                 <span className="editor-option-badge">{label}</span>
-                                {isSelected ? <CheckCircle2 size={16} /> : <span className="exam-option-select-dot" />}
+                                <span className="exam-option-select-copy">
+                                  <span className="exam-option-select-state">{isSelected ? "Correct" : "Choose"}</span>
+                                  {isSelected ? <CheckCircle2 size={15} /> : <span className="exam-option-select-dot" />}
+                                </span>
                               </button>
 
                               <div className="exam-option-input-block exam-option-input-block-sat">
