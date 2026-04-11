@@ -1,5 +1,5 @@
 import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Clock3, RefreshCcw, Save, ShieldAlert, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../lib/api";
 import type { AuthState } from "../lib/auth";
 import { EditorProvider } from "./editor/EditorContext";
@@ -34,7 +34,8 @@ type ExamEditorProps = {
   examId?: string;
   auth: AuthState | null;
   onBack: () => void;
-  onSave: (exam: ExamData) => void;
+  onSave: (exam: ExamData) => Promise<Partial<ExamData> | void>;
+  onAutosave: (exam: ExamData) => Promise<Partial<ExamData> | void>;
 };
 
 type Classroom = {
@@ -132,6 +133,18 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0);
   const [loading, setLoading] = useState(Boolean(props.examId));
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const examRef = useRef(exam);
+  const autosaveReadyRef = useRef(false);
+  const lastSavedSnapshotRef = useRef<string | null>(null);
+  const isSavingRef = useRef(false);
+  const queuedAutosaveRef = useRef(false);
+
+  useEffect(() => {
+    examRef.current = exam;
+  }, [exam]);
 
   useEffect(() => {
     let isMounted = true;
@@ -203,6 +216,25 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
       ).length,
     [exam.questions]
   );
+  const saveStatusText = useMemo(() => {
+    if (loading) {
+      return "Loading exam...";
+    }
+
+    if (saveState === "saving") {
+      return "Autosaving...";
+    }
+
+    if (saveState === "error") {
+      return saveError ?? "Autosave failed";
+    }
+
+    if (lastSavedAt) {
+      return `Saved ${new Date(lastSavedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+    }
+
+    return props.examId ? "No unsaved changes" : "Autosave starts after your first change";
+  }, [lastSavedAt, loading, props.examId, saveError, saveState]);
 
   const selectedClassroomId = exam.classroomIds[0] ?? "";
   const selectedClassroom = classrooms.find((classroom) => classroom.id === selectedClassroomId) ?? null;
@@ -264,8 +296,97 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
   }
 
   function saveExam() {
-    props.onSave(normalizeExamData(exam));
+    void persistExam("manual");
   }
+
+  async function persistExam(mode: "auto" | "manual") {
+    if (!props.auth) {
+      return;
+    }
+
+    if (isSavingRef.current) {
+      if (mode === "auto") {
+        queuedAutosaveRef.current = true;
+      }
+      return;
+    }
+
+    const payload = normalizeExamData(examRef.current);
+    const payloadSnapshot = JSON.stringify(payload);
+
+    if (mode === "auto" && payloadSnapshot === lastSavedSnapshotRef.current) {
+      return;
+    }
+
+    isSavingRef.current = true;
+    setSaveState("saving");
+    setSaveError(null);
+
+    try {
+      const response = mode === "manual" ? await props.onSave(payload) : await props.onAutosave(payload);
+      const persistedExam = response ? normalizeExamData(response as Partial<ExamData> & { questions?: Partial<Question>[] }) : payload;
+
+      lastSavedSnapshotRef.current = JSON.stringify({
+        ...payload,
+        id: persistedExam.id ?? payload.id,
+        code: persistedExam.code ?? payload.code
+      });
+
+      setExam((current) => {
+        const nextId = persistedExam.id ?? current.id;
+        const nextCode = persistedExam.code ?? current.code;
+
+        if (nextId === current.id && nextCode === current.code) {
+          return current;
+        }
+
+        return {
+          ...current,
+          id: nextId,
+          code: nextCode
+        };
+      });
+
+      setLastSavedAt(Date.now());
+      setSaveState("saved");
+    } catch (error) {
+      setSaveState("error");
+      setSaveError(error instanceof Error ? error.message : "Autosave failed");
+    } finally {
+      isSavingRef.current = false;
+
+      if (queuedAutosaveRef.current) {
+        queuedAutosaveRef.current = false;
+        void persistExam("auto");
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    const snapshot = JSON.stringify(normalizeExamData(exam));
+
+    if (!autosaveReadyRef.current) {
+      autosaveReadyRef.current = true;
+      lastSavedSnapshotRef.current = snapshot;
+      return;
+    }
+
+    if (snapshot === lastSavedSnapshotRef.current) {
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      void persistExam("auto");
+    }, 1200);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [exam, loading]);
 
   return (
     <div className="exam-editor exam-editor-clean exam-editor-single-scroll">
@@ -327,10 +448,20 @@ export function ExamEditor(props: ExamEditorProps): JSX.Element {
                     className="exam-title-input-inline"
                     placeholder="Exam title"
                   />
-                  <button type="button" className="editor-toolbar-button editor-toolbar-button-primary exam-editor-save-inline" onClick={saveExam}>
+                  <div className="exam-editor-save-group">
+                    <span className={`exam-editor-save-status exam-editor-save-status-${saveState}`} aria-live="polite">
+                      {saveStatusText}
+                    </span>
+                    <button
+                      type="button"
+                      className="editor-toolbar-button editor-toolbar-button-primary exam-editor-save-inline"
+                      onClick={saveExam}
+                      disabled={loading || saveState === "saving"}
+                    >
                     <Save size={15} />
                     Save Exam
-                  </button>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

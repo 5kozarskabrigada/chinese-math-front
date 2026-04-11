@@ -499,30 +499,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
     if (!props.auth) return;
 
     try {
-      // Derive editingExamId from URL
-      const currentEditingId = location.pathname.includes('/exams/edit/') 
-        ? location.pathname.split('/').pop() 
-        : null;
-
-      if (currentEditingId) {
-        // Update existing exam
-        await apiRequest({
-          path: `/admin/exams/${currentEditingId}`,
-          method: "PATCH",
-          auth: props.auth,
-          body: exam
-        });
-        setAlertModal({ show: true, message: "Exam updated successfully!" });
-      } else {
-        // Create new exam
-        await apiRequest({
-          path: "/admin/exams",
-          method: "POST",
-          auth: props.auth,
-          body: exam
-        });
-        setAlertModal({ show: true, message: "Exam created successfully!" });
-      }
+      const savedExam = await persistExam(exam, { showAlert: true });
 
       // Refresh exams list
       const examData = await apiRequest<Exam[]>({ path: "/admin/exams", auth: props.auth });
@@ -530,9 +507,57 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
       
       navigate('/admin/exams');
       setError(null);
+      return savedExam;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save exam");
     }
+  }
+
+  async function autosaveExam(exam: any) {
+    if (!props.auth) return;
+
+    try {
+      const savedExam = await persistExam(exam, { showAlert: false });
+      const examData = await apiRequest<Exam[]>({ path: "/admin/exams", auth: props.auth });
+      setExams(examData);
+      setError(null);
+      return savedExam;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to autosave exam");
+      throw err;
+    }
+  }
+
+  async function persistExam(exam: any, options: { showAlert: boolean }) {
+    const examId = typeof exam?.id === "string" && exam.id ? exam.id : null;
+
+    if (examId) {
+      const response = await apiRequest<{ updated: true; exam: any }>({
+        path: `/admin/exams/${examId}`,
+        method: "PATCH",
+        auth: props.auth,
+        body: exam
+      });
+
+      if (options.showAlert) {
+        setAlertModal({ show: true, message: "Exam updated successfully!" });
+      }
+
+      return response.exam;
+    }
+
+    const response = await apiRequest<{ created: true; exam: any }>({
+      path: "/admin/exams",
+      method: "POST",
+      auth: props.auth,
+      body: exam
+    });
+
+    if (options.showAlert) {
+      setAlertModal({ show: true, message: "Exam created successfully!" });
+    }
+
+    return response.exam;
   }
 
   async function toggleExamActive(examId: string, isActive: boolean) {
@@ -1102,6 +1127,7 @@ export function AdminPage(props: { auth: AuthState | null; onLogout: () => void 
                     navigate('/admin/exams');
                   }}
                   onSave={saveExam}
+                  onAutosave={autosaveExam}
                 />
               ) : (
                 <>
